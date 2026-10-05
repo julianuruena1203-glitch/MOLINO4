@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface Schematic2DViewerProps {
-  area?: 1 | 2 | 3;
+  area?: 1 | 2 | 3 | 4 | 'sotano';
   boxes?: JunctionBox[];
   points?: MeasurementPoint[];
   onSelectPoint?: (point: MeasurementPoint) => void;
@@ -27,14 +27,25 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
   onSelectPoint,
   onSavePoint
 }) => {
+  const isSotano = area === 4 || area === 'sotano';
   const currentArea = area;
-  const storageKey = currentArea === 3
-    ? 'vib_monitor_schematic_area3_original'
-    : currentArea === 2 
-      ? 'vib_monitor_schematic_area2_original' 
-      : 'vib_monitor_schematic_area1_original';
+  const storageKey = isSotano
+    ? 'vib_monitor_schematic_sotano_original'
+    : currentArea === 3
+      ? 'vib_monitor_schematic_area3_original'
+      : currentArea === 2 
+        ? 'vib_monitor_schematic_area2_original' 
+        : 'vib_monitor_schematic_area1_original';
 
-  const defaultFileName = currentArea === 3 ? 'AREA 3.jfif' : currentArea === 2 ? 'AREA 2.jfif' : 'AREA 1.jfif';
+  const defaultFileName = isSotano
+    ? 'SOTANO.jfif'
+    : currentArea === 3 
+      ? 'AREA 3.jfif' 
+      : currentArea === 2 
+        ? 'AREA 2.jfif' 
+        : 'AREA 1.jfif';
+
+  const areaTitle = isSotano ? 'Sótano' : `Área ${currentArea}`;
 
   // Loaded blueprint image (kept from persistent localStorage for this specific area)
   const [imageSrc, setImageSrc] = useState<string | null>(() => {
@@ -69,6 +80,20 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
 
   // Points of the current area, sorted exactly as in the Listado General table
   const areaPoints = useMemo(() => {
+    if (isSotano) {
+      const list = points.filter(p => {
+        return (
+          p.area === 4 ||
+          String(p.area).toLowerCase().includes('sotano') ||
+          String(p.area).toLowerCase().includes('sótano') ||
+          formatBoxId(p.boxId) === 'Área Sótano' ||
+          String(p.boxId).toLowerCase().includes('sotano') ||
+          String(p.boxId).toLowerCase().includes('sótano')
+        );
+      });
+      return [...list].sort((a, b) => getEquipoSortWeight(a) - getEquipoSortWeight(b));
+    }
+
     const list = points.filter(p => {
       // Exclude points assigned to Área Sótano
       if (
@@ -94,7 +119,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
       return cleanBox === 'JB #1';
     });
     return [...list].sort((a, b) => getEquipoSortWeight(a) - getEquipoSortWeight(b));
-  }, [points, currentArea]);
+  }, [points, currentArea, isSotano]);
 
   // Counts by type for the current area
   const dryerCount = useMemo(() => areaPoints.filter(p => p.type === 'dryer').length, [areaPoints]);
@@ -307,20 +332,22 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-slate-900">
-                Esquema Técnico 2D · Área {currentArea}
+                Esquema Técnico 2D · {areaTitle}
               </h2>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                {currentArea === 3
-                  ? 'Secadores 23A al 38 (JB #3)'
-                  : currentArea === 2
-                    ? 'Tercera Sección · Clupak · Segunda Sección (JB #2)'
-                    : 'Secadores 1 al 16 (JB #1)'}
+                {isSotano
+                  ? 'Área Sótano · Bombas, Retornos y Líneas'
+                  : currentArea === 3
+                    ? 'Secadores 23A al 38 (JB #3)'
+                    : currentArea === 2
+                      ? 'Tercera Sección · Clupak · Segunda Sección (JB #2)'
+                      : 'Secadores 1 al 16 (JB #1)'}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
               {imageSrc
                 ? 'Plano cargado. Puedes adjuntar nuevamente un nuevo esquema para reemplazarlo en cualquier momento.'
-                : `No hay esquema cargado para Área ${currentArea}. Haz clic en el botón o arrastra el archivo ${defaultFileName}.`}
+                : `No hay esquema cargado para ${areaTitle}. Haz clic en el botón o arrastra el archivo ${defaultFileName}.`}
             </p>
           </div>
         </div>
@@ -372,10 +399,10 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
             <div className="w-full flex items-center justify-center pointer-events-none select-none">
               <img
                 src={imageSrc}
-                alt={`Esquema Área ${currentArea}`}
+                alt={`Esquema ${areaTitle}`}
                 className="max-w-full max-h-[440px] w-auto h-auto object-contain bg-white pointer-events-none select-none mx-auto block"
                 style={{
-                  transform: currentArea === 2 || currentArea === 3 ? 'scale(0.92)' : 'scale(0.80)',
+                  transform: currentArea === 2 || currentArea === 3 || isSotano ? 'scale(0.92)' : 'scale(0.80)',
                   transformOrigin: 'center center'
                 }}
                 referrerPolicy="no-referrer"
@@ -414,7 +441,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
               Colocar Esquema Original ({defaultFileName})
             </h3>
             <p className="text-slate-500 text-xs mt-1 leading-relaxed">
-              Haz clic aquí, arrastra el archivo o presiona <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[11px] font-mono">Ctrl+V</kbd> para visualizar el plano completo del Área {currentArea}.
+              Haz clic aquí, arrastra el archivo o presiona <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[11px] font-mono">Ctrl+V</kbd> para visualizar el plano completo de {areaTitle}.
             </p>
             <button
               type="button"
@@ -534,7 +561,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
           <div className="flex items-center gap-2.5">
             <h3 className="text-base font-black text-slate-900">
-              Listado General de Puntos Área {currentArea} (Identificación Columna EQUIPO)
+              Listado General de Puntos {areaTitle} (Identificación Columna EQUIPO)
             </h3>
             <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
               {displayedPoints.length} de {areaPoints.length}
@@ -542,7 +569,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
           </div>
 
           <div className="text-xs text-slate-500">
-            Avance Global Área {currentArea}: <span className="font-mono font-bold text-emerald-600">{stats.completed} de {stats.total} ({stats.percent}%)</span>
+            Avance Global {areaTitle}: <span className="font-mono font-bold text-emerald-600">{stats.completed} de {stats.total} ({stats.percent}%)</span>
           </div>
         </div>
 

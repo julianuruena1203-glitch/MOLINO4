@@ -697,6 +697,17 @@ export default function App() {
             onSavePoint={handleSavePoint}
           />
         )}
+
+        {/* VIEW 7: VISOR 2D SÓTANO */}
+        {activeTab === 'sotano' && (
+          <Schematic2DViewer
+            area={4}
+            boxes={junctionBoxes}
+            points={points}
+            onSelectPoint={handleSelectPoint}
+            onSavePoint={handleSavePoint}
+          />
+        )}
       </main>
 
       {/* Point Detail / Diligence Modal */}

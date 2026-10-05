@@ -2,5 +2,7 @@
   "name": "MEDREMOTM4 - Monitoreo Vibraciones Secadores",
   "description": "Sistema de gestión y seguimiento de avance de instalación de puntos de medición remota de vibraciones en rodillos secadores - Proyecto MEDREMOTM4.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

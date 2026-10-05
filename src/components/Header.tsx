@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { MeasurementPoint } from '../types';
 
-export type ActiveTab = 'points' | 'materials' | 'progress' | 'costs' | 'boxes' | 'area2' | 'area3';
+export type ActiveTab = 'points' | 'materials' | 'progress' | 'costs' | 'boxes' | 'area2' | 'area3' | 'sotano';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -253,6 +253,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Compass className="w-4 h-4" />
             Visor 2D Area 3
+          </button>
+
+          <button
+            id="tab-sotano"
+            onClick={() => onTabChange('sotano')}
+            className={`py-2.5 px-3.5 rounded-t-lg text-xs font-bold flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+              activeTab === 'sotano'
+                ? 'border-sky-400 text-sky-400 bg-slate-800/60'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+            }`}
+          >
+            <Compass className="w-4 h-4" />
+            Visor 2D Sotano
           </button>
         </nav>
       </div>
