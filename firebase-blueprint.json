@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "MeasurementPoint": {
+      "title": "MeasurementPoint",
+      "description": "Punto de medición de vibración en secadores, rodillos y piñones en Molino 4",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único" },
+        "tag": { "type": "string", "description": "Nomenclatura técnica (1S..48S, 1R..83R, P-AA..P-XXIX)" },
+        "name": { "type": "string", "description": "Nombre del equipo o componente" },
+        "type": { "type": "string", "description": "Tipo de equipo" },
+        "boxId": { "type": "string", "description": "Caja de conexiones asignada" },
+        "boxChannel": { "type": "number", "description": "Canal en la caja de conexiones" },
+        "area": { "type": "number", "description": "Área de secado (1, 2 o 3)" },
+        "status": { "type": "string", "description": "Estado del punto (pending, in_progress, installed, verified)" }
+      },
+      "required": ["id", "tag", "name", "type", "boxId", "boxChannel", "status"]
+    },
+    "MaterialItem": {
+      "title": "MaterialItem",
+      "description": "Ítem de material para la instrumentación de vibraciones",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador del material" },
+        "code": { "type": "string", "description": "Código de material" },
+        "name": { "type": "string", "description": "Nombre del material" },
+        "category": { "type": "string", "description": "Categoría de material" },
+        "requiredQty": { "type": "number", "description": "Cantidad requerida" },
+        "installedQty": { "type": "number", "description": "Cantidad instalada" },
+        "unitCost": { "type": "number", "description": "Costo unitario" }
+      },
+      "required": ["id", "code", "name", "category", "requiredQty", "installedQty", "unitCost"]
+    },
+    "JunctionBox": {
+      "title": "JunctionBox",
+      "description": "Caja de conexiones de instrumentación (JB #1, JB #2, JB #3)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador de la caja" },
+        "name": { "type": "string", "description": "Nombre de la caja" },
+        "totalChannels": { "type": "number", "description": "Total de canales" }
+      },
+      "required": ["id", "name", "totalChannels"]
+    },
+    "CostCategory": {
+      "title": "CostCategory",
+      "description": "Categoría presupuestal del proyecto M4",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador de la partida" },
+        "name": { "type": "string", "description": "Nombre de la partida" },
+        "budgeted": { "type": "number", "description": "Presupuesto asignado" },
+        "spent": { "type": "number", "description": "Presupuesto ejecutado" }
+      },
+      "required": ["id", "name", "budgeted", "spent"]
+    }
+  },
+  "firestore": {
+    "/points/{pointId}": {
+      "schema": "MeasurementPoint",
+      "description": "Puntos de medición de vibración de la máquina M4"
+    },
+    "/materials/{materialId}": {
+      "schema": "MaterialItem",
+      "description": "Catálogo de inventario de materiales e insumos"
+    },
+    "/junction_boxes/{boxId}": {
+      "schema": "JunctionBox",
+      "description": "Cajas de conexiones de campo"
+    },
+    "/costs/{costId}": {
+      "schema": "CostCategory",
+      "description": "Partidas presupuestales y control financiero"
+    }
+  }
+}
