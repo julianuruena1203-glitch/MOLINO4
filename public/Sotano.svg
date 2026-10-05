@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 560" width="100%" height="100%" style="background:#ffffff; font-family:'Plus Jakarta Sans', Arial, sans-serif;">
+  <defs>
+    <style>
+      .roll-num { font-size: 12px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .roll-letter { font-size: 11px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .sec-title { font-size: 22px; font-weight: 400; fill: #111827; letter-spacing: 4px; font-family: monospace, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- ================= TOP LEFT: SEGUNDA SECCION ================= -->
+  <g id="sotano-segunda">
+    <!-- Connecting dashed cyan line -->
+    <polyline points="20,40 33,180 230,165 300,165 440,135 480,165 520,195 560,30" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="480" y1="165" x2="435" y2="275" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="435" y1="275" x2="520" y2="195" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+
+    <!-- 43 B -->
+    <g transform="translate(33, 180)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">43</text><text x="0" y="32" class="roll-letter">B</text></g>
+    <!-- 44 B -->
+    <g transform="translate(230, 165)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">44</text><text x="0" y="32" class="roll-letter">B</text></g>
+    <!-- 45 J -->
+    <g transform="translate(300, 165)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">45</text><text x="0" y="32" class="roll-letter">J</text></g>
+    <!-- 46 K -->
+    <g transform="translate(440, 135)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">46</text><text x="0" y="-8" class="roll-letter">K</text></g>
+    <!-- 47 J -->
+    <g transform="translate(480, 165)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">47</text><text x="0" y="-8" class="roll-letter">J</text></g>
+    <!-- 48 H -->
+    <g transform="translate(435, 275)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">48</text><text x="0" y="-8" class="roll-letter">H</text></g>
+    <!-- 49 B -->
+    <g transform="translate(520, 195)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">49</text><text x="0" y="32" class="roll-letter">B</text></g>
+
+    <text x="280" y="360" class="sec-title" text-anchor="middle">SEGUNDA SECCION</text>
+  </g>
+
+  <!-- ================= TOP RIGHT: PRIMERA SECCION ================= -->
+  <g id="sotano-primera">
+    <!-- Connecting dashed cyan line -->
+    <polyline points="600,40 605,175 750,125 825,165 940,205 970,30" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="825" y1="165" x2="725" y2="300" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="725" y1="300" x2="940" y2="205" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+
+    <!-- 18 J -->
+    <g transform="translate(605, 175)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">18</text><text x="0" y="32" class="roll-letter">J</text></g>
+    <!-- 19 K -->
+    <g transform="translate(750, 125)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">19</text><text x="0" y="-8" class="roll-letter">K</text></g>
+    <!-- 20 J -->
+    <g transform="translate(825, 165)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">20</text><text x="0" y="-8" class="roll-letter">J</text></g>
+    <!-- 21 H -->
+    <g transform="translate(725, 300)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">21</text><text x="0" y="-8" class="roll-letter">H</text></g>
+    <!-- 22 B -->
+    <g transform="translate(940, 205)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">22</text><text x="0" y="32" class="roll-letter">B</text></g>
+
+    <text x="780" y="360" class="sec-title" text-anchor="middle">PRIMERA SECCION</text>
+  </g>
+
+  <!-- ================= BOTTOM LEFT: CUARTA SECCION ================= -->
+  <g id="sotano-cuarta" transform="translate(0, 360)">
+    <polyline points="120,40 160,135 340,75 420,135 445,160 480,135 490,30" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="420" y1="135" x2="265" y2="180" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="265" y1="180" x2="445" y2="160" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+
+    <!-- 73 B -->
+    <g transform="translate(160, 135)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">73</text><text x="0" y="32" class="roll-letter">B</text></g>
+    <!-- 74 K -->
+    <g transform="translate(340, 75)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">74</text><text x="0" y="-8" class="roll-letter">K</text></g>
+    <!-- 75 J -->
+    <g transform="translate(420, 135)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">75</text><text x="0" y="-8" class="roll-letter">J</text></g>
+    <!-- 76 H -->
+    <g transform="translate(265, 180)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">76</text><text x="0" y="32" class="roll-letter">H</text></g>
+    <!-- 77 B -->
+    <g transform="translate(445, 160)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">77</text><text x="0" y="32" class="roll-letter">B</text></g>
+    <!-- 63 B -->
+    <g transform="translate(480, 135)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">63</text><text x="0" y="32" class="roll-letter">B</text></g>
+
+    <text x="280" y="240" class="sec-title" text-anchor="middle">CUARTA SECCION</text>
+  </g>
+
+  <!-- ================= BOTTOM RIGHT: TERCERA SECCION ================= -->
+  <g id="sotano-tercera" transform="translate(0, 360)">
+    <polyline points="685,75 765,135 870,165 910,30" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="765" y1="135" x2="650" y2="290" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+    <line x1="650" y1="290" x2="870" y2="165" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+
+    <!-- 64 K -->
+    <g transform="translate(685, 75)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">64</text><text x="0" y="-8" class="roll-letter">K</text></g>
+    <!-- 65 J -->
+    <g transform="translate(765, 135)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-18" class="roll-num">65</text><text x="0" y="-8" class="roll-letter">J</text></g>
+    <!-- 66 H -->
+    <g transform="translate(650, 290)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">66</text><text x="0" y="32" class="roll-letter">H</text></g>
+    <!-- 67 B -->
+    <g transform="translate(870, 165)"><circle cx="0" cy="0" r="9" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="20" class="roll-num">67</text><text x="0" y="32" class="roll-letter">B</text></g>
+
+    <text x="780" y="240" class="sec-title" text-anchor="middle">TERCERA SECCION</text>
+  </g>
+</svg>

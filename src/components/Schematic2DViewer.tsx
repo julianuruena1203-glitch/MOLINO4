@@ -1,15 +1,26 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MeasurementPoint, JunctionBox, PointStatus } from '../types';
 import { getCleanComponentName, formatBoxId, getNomenclature, getEquipoSortWeight } from './PointsTable';
+import { OriginalSchematicImage } from './OriginalSchematicImage';
 import { 
-  Image as ImageIcon,
+  Compass,
   Check,
   Search,
   X,
   ArrowRight,
-  Upload,
-  Trash2,
-  RefreshCw
+  ShieldCheck,
+  RefreshCw,
+  Activity,
+  Layers,
+  Zap,
+  Tag,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Maximize2,
+  Minimize2,
+  Lock,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface Schematic2DViewerProps {
@@ -29,44 +40,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
 }) => {
   const isSotano = area === 4 || area === 'sotano';
   const currentArea = area;
-  const storageKey = isSotano
-    ? 'vib_monitor_schematic_sotano_original'
-    : currentArea === 3
-      ? 'vib_monitor_schematic_area3_original'
-      : currentArea === 2 
-        ? 'vib_monitor_schematic_area2_original' 
-        : 'vib_monitor_schematic_area1_original';
-
-  const defaultFileName = isSotano
-    ? 'SOTANO.jfif'
-    : currentArea === 3 
-      ? 'AREA 3.jfif' 
-      : currentArea === 2 
-        ? 'AREA 2.jfif' 
-        : 'AREA 1.jfif';
-
   const areaTitle = isSotano ? 'Sótano' : `Área ${currentArea}`;
-
-  // Loaded blueprint image (kept from persistent localStorage for this specific area)
-  const [imageSrc, setImageSrc] = useState<string | null>(() => {
-    try {
-      return localStorage.getItem(storageKey);
-    } catch {
-      return null;
-    }
-  });
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Sync image when area switches
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      setImageSrc(stored);
-    } catch {
-      setImageSrc(null);
-    }
-  }, [storageKey]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,7 +50,59 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
   // Selected point for detailed stage management drawer
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
 
-  const [isDragging, setIsDragging] = useState(false);
+  // Zoom & Pan state for the fixed original CAD schematic
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  // Configuration for the official attached image matching user files
+  const schemaConfig = useMemo(() => {
+    if (isSotano) {
+      return {
+        imageNumber: 4,
+        title: 'Imagen 4 · Visor 2D Área Sótano',
+        subtitle: 'Retornos de Lona (Primera, Segunda, Tercera y Cuarta Sección)',
+        badge: 'Imagen 4 · Sótano',
+        filename: 'Sotano.png',
+        areaLabel: 'Área Sótano · Retornos'
+      };
+    }
+    if (currentArea === 3) {
+      return {
+        imageNumber: 3,
+        title: 'Imagen 3 · Visor 2D Área 3',
+        subtitle: 'Cuarta Sección (Secadores 31 al 38, Rodillos de Lona y Piñones XIV al XVI)',
+        badge: 'Imagen 3 · Área 3',
+        filename: 'Area 3.png',
+        areaLabel: 'Secadores 31 al 38 · JB #3'
+      };
+    }
+    if (currentArea === 2) {
+      return {
+        imageNumber: 2,
+        title: 'Imagen 2 · Visor 2D Área 2',
+        subtitle: 'Tercera Sección, Unidad Clupak M4 y Segunda Sección (Secadores 17 al 30)',
+        badge: 'Imagen 2 · Área 2',
+        filename: 'Area 2.png',
+        areaLabel: 'Clupak & Secadores 17 al 30 · JB #2'
+      };
+    }
+    return {
+      imageNumber: 1,
+      title: 'Imagen 1 · Visor 2D Área 1',
+      subtitle: 'Primera Sección y Segunda Sección (Secadores 1 al 16, Rodillos y Piñones I al III)',
+      badge: 'Imagen 1 · Área 1',
+      filename: 'Area 1.png',
+      areaLabel: 'Secadores 1 al 16 · JB #1'
+    };
+  }, [currentArea, isSotano]);
+
+  useEffect(() => {
+    setZoomLevel(1);
+  }, [schemaConfig]);
+
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.8));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.75));
+  const handleResetZoom = () => setZoomLevel(1);
 
   // Points of the current area, sorted exactly as in the Listado General table
   const areaPoints = useMemo(() => {
@@ -249,210 +275,168 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
     onSavePoint(updatedPoint);
   };
 
-  // Clear loaded schematic
-  const handleClearImage = () => {
-    setImageSrc(null);
-    try {
-      localStorage.removeItem(storageKey);
-    } catch (e) {
-      console.warn('Error clearing schematic:', e);
-    }
-  };
-
-  // Process file upload / paste
-  const processFile = (file: File) => {
-    const lowerName = file.name.toLowerCase();
-    const isImage = file.type.startsWith('image/') ||
-      lowerName.endsWith('.jfif') ||
-      lowerName.endsWith('.jpg') ||
-      lowerName.endsWith('.jpeg') ||
-      lowerName.endsWith('.png') ||
-      lowerName.endsWith('.webp') ||
-      lowerName.endsWith('.svg');
-    if (!isImage) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (dataUrl) {
-        setImageSrc(dataUrl);
-        try {
-          localStorage.setItem(storageKey, dataUrl);
-        } catch (err) {
-          console.warn('Storage quota:', err);
-        }
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Paste listener
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const file = items[i].getAsFile();
-          if (file) {
-            processFile(file);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [storageKey]);
-
   return (
     <div className="w-full space-y-5">
-      {/* Hidden file input for uploading or replacing the schematic */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.jfif,.jpg,.jpeg,.png,.webp"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            processFile(file);
-            e.target.value = '';
-          }
-        }}
-        className="hidden"
-      />
-
-      {/* ================= BARRA SUPERIOR CON BOTÓN PARA ADJUNTAR / REEMPLAZAR ESQUEMA ================= */}
+      {/* ================= BARRA SUPERIOR INFORMATIVA DEL ESQUEMA FIJO ORIGINAL ================= */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 shadow-2xs">
-            <ImageIcon className="w-5 h-5" />
+            <Compass className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-slate-900">
-                Esquema Técnico 2D · {areaTitle}
+                {schemaConfig.title}
               </h2>
               <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                {isSotano
-                  ? 'Área Sótano · Bombas, Retornos y Líneas'
-                  : currentArea === 3
-                    ? 'Secadores 23A al 38 (JB #3)'
-                    : currentArea === 2
-                      ? 'Tercera Sección · Clupak · Segunda Sección (JB #2)'
-                      : 'Secadores 1 al 16 (JB #1)'}
+                {schemaConfig.badge}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {imageSrc
-                ? 'Plano cargado. Puedes adjuntar nuevamente un nuevo esquema para reemplazarlo en cualquier momento.'
-                : `No hay esquema cargado para ${areaTitle}. Haz clic en el botón o arrastra el archivo ${defaultFileName}.`}
+              {schemaConfig.subtitle} · Plano original de ingeniería fijado sin modificaciones.
             </p>
           </div>
         </div>
 
+        {/* Right side controls: Zoom & Locked status */}
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
-            title="Adjuntar o reemplazar esquema de esta área"
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>{imageSrc ? 'Adjuntar nuevamente / Reemplazar' : `Adjuntar Esquema (${defaultFileName})`}</span>
-          </button>
-
-          {imageSrc && (
+          {/* Zoom controls */}
+          <div className="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200">
             <button
-              type="button"
-              onClick={handleClearImage}
-              className="p-2 bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 rounded-xl border border-slate-200 hover:border-rose-300 text-xs transition-colors cursor-pointer flex items-center gap-1.5"
-              title="Quitar plano actual para volver a cargarlo"
+              onClick={handleZoomOut}
+              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer"
+              title="Alejar (-)"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline text-[11px] font-medium">Quitar</span>
+              <ZoomOut className="w-4 h-4" />
             </button>
-          )}
+            <span className="px-2 font-mono text-xs font-bold text-slate-700 select-none min-w-[48px] text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <button
+              onClick={handleZoomIn}
+              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer"
+              title="Acercar (+)"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleResetZoom}
+              className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-lg transition-colors cursor-pointer ml-0.5"
+              title="Restablecer zoom (100%)"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setIsFullscreen(true)}
+              className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-white rounded-lg transition-colors cursor-pointer ml-0.5"
+              title="Ver en pantalla completa"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Locked Badge */}
+          <div className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+            <Lock className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Esquema Fijo e Inmutable</span>
+          </div>
         </div>
       </div>
 
-      {/* ================= 1. ESQUEMA TÉCNICO (VISTA COMPLETA, SIN MOVER NI EDITAR) ================= */}
-      <div 
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          const file = e.dataTransfer.files?.[0];
-          if (file) processFile(file);
-        }}
-        className={`bg-white border rounded-2xl shadow-sm overflow-hidden p-3 sm:p-5 flex items-center justify-center min-h-[340px] sm:min-h-[420px] transition-all relative ${
-          isDragging ? 'border-sky-500 ring-2 ring-sky-200 bg-sky-50/20' : 'border-slate-200'
-        }`}
-      >
-        {imageSrc ? (
-          <div className="w-full flex flex-col items-center justify-center py-1 overflow-hidden relative group">
-            <div className="w-full flex items-center justify-center pointer-events-none select-none">
-              <img
-                src={imageSrc}
-                alt={`Esquema ${areaTitle}`}
-                className="max-w-full max-h-[440px] w-auto h-auto object-contain bg-white pointer-events-none select-none mx-auto block"
-                style={{
-                  transform: currentArea === 2 || currentArea === 3 || isSotano ? 'scale(0.92)' : 'scale(0.80)',
-                  transformOrigin: 'center center'
-                }}
-                referrerPolicy="no-referrer"
-              />
-            </div>
-            {/* Botón flotante accesible al pasar el cursor */}
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-xs border border-slate-200 rounded-lg p-1 shadow-md flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                title="Adjuntar nuevamente o reemplazar por un archivo nuevo"
-              >
-                <Upload className="w-3 h-3" />
-                <span>Reemplazar</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleClearImage}
-                className="p-1 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded cursor-pointer"
-                title="Quitar plano actual"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
+      {/* ================= 1. ESQUEMA TÉCNICO OFICIAL ORIGINAL (IMAGEN ADJUNTA FIJA) ================= */}
+      <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        {/* Banner de archivo oficial */}
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between text-xs text-slate-600">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold font-mono text-[11px] border border-sky-200">
+              Imagen {schemaConfig.imageNumber}
+            </span>
+            <ImageIcon className="w-4 h-4 text-sky-600" />
+            <span className="font-semibold text-slate-800">{schemaConfig.filename}</span>
+            <span className="text-slate-400">·</span>
+            <span className="text-[11px] text-slate-500">{schemaConfig.areaLabel} · Esquema original intacto</span>
           </div>
-        ) : (
+          <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md border border-emerald-200">
+            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+            <span>Fijo e Inalterable</span>
+          </div>
+        </div>
+
+        {/* Canvas de imagen con zoom y scroll suave */}
+        <div className="relative w-full p-4 sm:p-6 overflow-auto bg-white flex items-center justify-center min-h-[380px] max-h-[640px]">
           <div 
-            onClick={() => fileInputRef.current?.click()}
-            className="text-center p-8 max-w-md cursor-pointer group"
+            className="transition-transform duration-150 ease-out origin-center w-full max-w-[1100px]"
+            style={{ transform: `scale(${zoomLevel})` }}
           >
-            <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 group-hover:text-slate-800 group-hover:border-slate-400 mx-auto flex items-center justify-center shadow-xs transition-all mb-3">
-              <ImageIcon className="w-8 h-8" />
-            </div>
-            <h3 className="text-slate-900 font-bold text-base">
-              Colocar Esquema Original ({defaultFileName})
-            </h3>
-            <p className="text-slate-500 text-xs mt-1 leading-relaxed">
-              Haz clic aquí, arrastra el archivo o presiona <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[11px] font-mono">Ctrl+V</kbd> para visualizar el plano completo de {areaTitle}.
-            </p>
-            <button
-              type="button"
-              className="mt-4 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-xs cursor-pointer"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Cargar {defaultFileName}</span>
-            </button>
+            <OriginalSchematicImage area={area} className="max-h-[520px] mx-auto filter contrast-[1.02]" />
           </div>
-        )}
+        </div>
+
+        {/* Footer del esquema con aviso de integridad */}
+        <div className="bg-slate-50/80 border-t border-slate-200/80 px-4 py-2 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
+          <span>Diseño original de ingeniería mecánica · Smurfit Westrock Molino 4</span>
+          <span>Esquema protegido · No se permite eliminar ni adjuntar otro plano</span>
+        </div>
       </div>
+
+      {/* Modal Pantalla Completa si el usuario hace clic en expandir */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xs flex flex-col p-4 sm:p-6 animate-in fade-in">
+          <div className="flex items-center justify-between bg-slate-900 border border-slate-800 px-5 py-3 rounded-2xl text-white mb-4">
+            <div className="flex items-center gap-3">
+              <Compass className="w-5 h-5 text-sky-400" />
+              <div>
+                <h3 className="text-sm font-bold text-white">{schemaConfig.title}</h3>
+                <p className="text-xs text-slate-400">{schemaConfig.subtitle}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center bg-slate-800 rounded-xl p-1 border border-slate-700">
+                <button
+                  onClick={handleZoomOut}
+                  className="p-1.5 text-slate-300 hover:text-white rounded-lg"
+                  title="Alejar"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <span className="px-3 font-mono text-xs font-bold text-sky-400">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  onClick={handleZoomIn}
+                  className="p-1.5 text-slate-300 hover:text-white rounded-lg"
+                  title="Acercar"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleResetZoom}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg ml-1"
+                  title="Restablecer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-colors cursor-pointer"
+                title="Cerrar pantalla completa"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white rounded-2xl border border-slate-800 overflow-auto p-6 flex items-center justify-center">
+            <div 
+              className="transition-transform duration-150 ease-out origin-center w-full max-w-[1250px]"
+              style={{ transform: `scale(${zoomLevel})` }}
+            >
+              <OriginalSchematicImage area={area} className="max-h-[82vh] mx-auto" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ================= 2. FILTERS & SEARCH BAR ================= */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">

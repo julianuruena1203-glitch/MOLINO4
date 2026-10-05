@@ -1,0 +1,200 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1250 420" width="100%" height="100%" style="background:#ffffff; font-family:'Plus Jakarta Sans', Arial, sans-serif;">
+  <defs>
+    <style>
+      .cyl-num { font-size: 24px; font-weight: 500; fill: #111827; text-anchor: middle; dominant-baseline: central; }
+      .roll-num { font-size: 11px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .roll-letter { font-size: 10px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .pinion-text { font-size: 11px; font-weight: 700; fill: #111827; text-anchor: middle; dominant-baseline: central; }
+      .sec-title { font-size: 18px; font-weight: 400; fill: #111827; letter-spacing: 4px; font-family: monospace, sans-serif; }
+    </style>
+  </defs>
+
+  <!-- Dashed felt lines -->
+  <polyline points="30,85 170,60 110,115 250,75 370,115" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+  <polyline points="690,115 720,70 860,85" fill="none" stroke="#38bdf8" stroke-width="1.4" stroke-dasharray="4 3" />
+
+  <!-- Paper Path (Brown line) -->
+  <!-- Segunda seccion cylinders to Clupak -->
+  <path d="M 980,170 C 950,170 945,265 915,265 C 885,265 880,170 850,170 C 820,170 815,265 785,265 C 755,265 750,170 720,170 L 690,170 L 600,215" fill="none" stroke="#b38827" stroke-width="2.2" />
+  <!-- Clupak through to Tercera Seccion -->
+  <path d="M 550,300 L 440,300 C 420,300 410,265 375,265 C 345,265 340,170 310,170 C 280,170 275,265 245,265 C 215,265 210,170 180,170 C 150,170 145,265 115,265 C 85,265 80,170 50,170" fill="none" stroke="#b38827" stroke-width="2.2" />
+
+  <!-- ================= TERCERA SECCION (LEFT) ================= -->
+  <!-- Top felt rolls -->
+  <!-- 54 B -->
+  <g transform="translate(30, 85)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">54</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 55 H -->
+  <g transform="translate(170, 60)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">55</text><text x="0" y="-6" class="roll-letter">H</text></g>
+  <!-- 56 B -->
+  <g transform="translate(110, 115)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">56</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 57 K -->
+  <g transform="translate(250, 75)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">57</text><text x="0" y="-6" class="roll-letter">K</text></g>
+  <!-- 58 J -->
+  <g transform="translate(370, 115)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">58</text><text x="0" y="-6" class="roll-letter">J</text></g>
+
+  <!-- Pocket rolls Tercera -->
+  <!-- 53 B -->
+  <g transform="translate(38, 185)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">53</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 52 B -->
+  <g transform="translate(122, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">52</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 51 B -->
+  <g transform="translate(205, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">51</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 50 B -->
+  <g transform="translate(288, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">50</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 59 B -->
+  <g transform="translate(385, 190)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">59</text><text x="0" y="-6" class="roll-letter">B</text></g>
+
+  <!-- Bottom rolls Tercera -->
+  <!-- 62 E -->
+  <g transform="translate(65, 260)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="-16" y="-2" class="roll-num">62</text><text x="-16" y="8" class="roll-letter">E</text></g>
+  <!-- 61 C -->
+  <g transform="translate(165, 230)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">61</text><text x="0" y="28" class="roll-letter">C</text></g>
+  <!-- 60 C -->
+  <g transform="translate(248, 230)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">60</text><text x="0" y="28" class="roll-letter">C</text></g>
+  <!-- 91 C -->
+  <g transform="translate(330, 230)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">91</text><text x="0" y="28" class="roll-letter">C</text></g>
+  <!-- 90 C -->
+  <g transform="translate(415, 290)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">90</text><text x="0" y="28" class="roll-letter">C</text></g>
+
+  <!-- Cylinders Tercera -->
+  <!-- 30 -->
+  <circle cx="80" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="80" y="170" class="cyl-num">30</text>
+  <!-- 28 -->
+  <circle cx="163" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="163" y="170" class="cyl-num">28</text>
+  <!-- 26 -->
+  <circle cx="246" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="246" y="170" class="cyl-num">26</text>
+  <!-- 24 -->
+  <circle cx="330" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="330" y="170" class="cyl-num">24</text>
+
+  <!-- 29 -->
+  <circle cx="122" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="122" y="265" class="cyl-num">29</text>
+  <!-- 27 -->
+  <circle cx="205" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="205" y="265" class="cyl-num">27</text>
+  <!-- 25 -->
+  <circle cx="288" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="288" y="265" class="cyl-num">25</text>
+  <!-- 23A -->
+  <circle cx="372" cy="265" r="42" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="372" y="265" class="cyl-num">23A</text>
+
+  <!-- Pinions Tercera: XIII, M, XII, L, XI, K, X, J, IX, I, VIII, H, VII, G -->
+  <!-- XIII & M -->
+  <circle cx="95" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="95" y="210" class="pinion-text">XIII</text>
+  <circle cx="107" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="107" y="230" class="pinion-text">M</text>
+  <!-- XII & L -->
+  <circle cx="142" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="142" y="210" class="pinion-text">XII</text>
+  <circle cx="134" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="134" y="230" class="pinion-text">L</text>
+  <!-- XI & K -->
+  <circle cx="180" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="180" y="210" class="pinion-text">XI</text>
+  <circle cx="192" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="192" y="230" class="pinion-text">K</text>
+  <!-- X & J -->
+  <circle cx="225" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="225" y="210" class="pinion-text">X</text>
+  <circle cx="217" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="217" y="230" class="pinion-text">J</text>
+  <!-- IX & I -->
+  <circle cx="260" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="260" y="210" class="pinion-text">IX</text>
+  <circle cx="272" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="272" y="230" class="pinion-text">I</text>
+  <!-- VIII & H -->
+  <circle cx="307" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="307" y="210" class="pinion-text">VIII</text>
+  <circle cx="299" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="299" y="230" class="pinion-text">H</text>
+  <!-- VII & G -->
+  <circle cx="344" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="344" y="210" class="pinion-text">VII</text>
+  <circle cx="354" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="354" y="230" class="pinion-text">G</text>
+
+  <!-- ================= UNIDAD CLUPAK (CENTER) ================= -->
+  <g transform="translate(440, 80)" stroke="#0033cc" stroke-width="1.8" fill="none">
+    <!-- Support columns and machine body -->
+    <rect x="30" y="25" width="12" height="200" stroke="#0033cc" fill="#f8fafc" />
+    <rect x="135" y="80" width="14" height="145" stroke="#0033cc" fill="#f8fafc" />
+    <path d="M 0,140 L 42,140 L 42,155 L 0,155 Z" fill="#0033cc" />
+    <line x1="25" y1="225" x2="170" y2="225" stroke="#0033cc" stroke-width="3" />
+
+    <!-- Top Drive Belts and Pulleys -->
+    <circle cx="75" cy="28" r="9" stroke="#0033cc" />
+    <text x="75" y="15" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">2</text>
+    <circle cx="118" cy="15" r="11" stroke="#0033cc" />
+    <text x="118" y="2" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">3</text>
+    <circle cx="160" cy="42" r="10" stroke="#0033cc" />
+    <text x="160" y="28" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">4</text>
+
+    <!-- Motor block -->
+    <rect x="103" y="35" width="32" height="38" stroke="#0033cc" fill="#f8fafc" />
+
+    <!-- Drive lines / belt -->
+    <path d="M 75,28 L 118,15 L 160,42 L 72,120 Z" stroke="#0033cc" stroke-width="1.5" />
+
+    <!-- Roll 1 -->
+    <circle cx="72" cy="120" r="10" stroke="#0033cc" />
+    <text x="55" y="122" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">1</text>
+
+    <!-- Clupak Roll Main Cylinder -->
+    <circle cx="120" cy="130" r="34" stroke="#0033cc" stroke-width="2" />
+    <circle cx="120" cy="130" r="8" stroke="#0033cc" />
+    <text x="120" y="152" stroke="none" fill="#0033cc" font-size="7.5" font-weight="bold" font-family="monospace" text-anchor="middle">CLUPAK</text>
+    <text x="120" y="161" stroke="none" fill="#0033cc" font-size="7.5" font-weight="bold" font-family="monospace" text-anchor="middle">ROLL</text>
+
+    <!-- Nip Roll & Clupak side rolls A, B, C, D -->
+    <circle cx="165" cy="122" r="6" stroke="#0033cc" />
+    <text x="175" y="125" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">B</text>
+    <circle cx="172" cy="136" r="6" stroke="#0033cc" />
+    <text x="182" y="140" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">A</text>
+    <circle cx="125" cy="195" r="8" stroke="#0033cc" />
+    <text x="137" y="197" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">C</text>
+    <circle cx="55" cy="190" r="8" stroke="#0033cc" />
+    <text x="40" y="192" stroke="none" fill="#0033cc" font-size="11" font-weight="bold">D</text>
+  </g>
+
+  <!-- ================= SEGUNDA SECCION (RIGHT) ================= -->
+  <!-- Top rolls -->
+  <!-- 30 J -->
+  <g transform="translate(860, 85)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">30</text><text x="0" y="-6" class="roll-letter">J</text></g>
+  <!-- 29 B -->
+  <g transform="translate(720, 70)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">29</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 88 G -->
+  <g transform="translate(690, 115)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">88</text><text x="0" y="-6" class="roll-letter">G</text></g>
+
+  <!-- Pocket rolls -->
+  <!-- 28 B -->
+  <g transform="translate(760, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">28</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 27 B -->
+  <g transform="translate(845, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">27</text><text x="0" y="-6" class="roll-letter">B</text></g>
+  <!-- 26 B -->
+  <g transform="translate(930, 180)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="-16" class="roll-num">26</text><text x="0" y="-6" class="roll-letter">B</text></g>
+
+  <!-- Bottom rolls -->
+  <!-- 42 E -->
+  <g transform="translate(705, 260)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="-16" y="-2" class="roll-num">42</text><text x="-16" y="8" class="roll-letter">E</text></g>
+  <!-- 41 C -->
+  <g transform="translate(803, 230)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">41</text><text x="0" y="28" class="roll-letter">C</text></g>
+  <!-- 40 C -->
+  <g transform="translate(890, 230)"><circle cx="0" cy="0" r="8" fill="#fff" stroke="#ea580c" stroke-width="1.5" /><text x="0" y="18" class="roll-num">40</text><text x="0" y="28" class="roll-letter">C</text></g>
+
+  <!-- Cylinders Segunda -->
+  <!-- 23 -->
+  <circle cx="720" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="720" y="170" class="cyl-num">23</text>
+  <!-- 21 -->
+  <circle cx="803" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="803" y="170" class="cyl-num">21</text>
+  <!-- 19 -->
+  <circle cx="888" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="888" y="170" class="cyl-num">19</text>
+  <!-- 17 -->
+  <circle cx="975" cy="170" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="975" y="170" class="cyl-num">17</text>
+
+  <!-- 22 -->
+  <circle cx="762" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="762" y="265" class="cyl-num">22</text>
+  <!-- 20 -->
+  <circle cx="845" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="845" y="265" class="cyl-num">20</text>
+  <!-- 18 -->
+  <circle cx="930" cy="265" r="40" fill="none" stroke="#b38827" stroke-width="2.2" /><text x="930" y="265" class="cyl-num">18</text>
+
+  <!-- Pinions Segunda: VI, F, V, E, IV, D -->
+  <!-- VI & F -->
+  <circle cx="734" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="734" y="210" class="pinion-text">VI</text>
+  <circle cx="746" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="746" y="230" class="pinion-text">F</text>
+  <!-- V & E -->
+  <circle cx="788" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="788" y="210" class="pinion-text">V</text>
+  <circle cx="778" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="778" y="230" class="pinion-text">E</text>
+  <!-- IV & D -->
+  <circle cx="828" cy="210" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="828" y="210" class="pinion-text">IV</text>
+  <circle cx="840" cy="230" r="10" fill="#fff" stroke="#111827" stroke-width="1.8" /><text x="840" y="230" class="pinion-text">D</text>
+
+  <!-- Titles -->
+  <text x="230" y="370" class="sec-title" text-anchor="middle">TERCERA SECCION</text>
+  <text x="850" y="370" class="sec-title" text-anchor="middle">SEGUNDA SECCION</text>
+</svg>
