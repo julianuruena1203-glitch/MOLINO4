@@ -54,7 +54,50 @@ export interface FirestoreErrorInfo {
   };
 }
 
+// Quota exhaustion tracking and circuit-breaker
+const QUOTA_EXHAUSTED_KEY = 'vib_monitor_firestore_quota_exhausted';
+
+export const isQuotaError = (error: unknown): boolean => {
+  if (!error) return false;
+  const msg = error instanceof Error ? error.message : String(error);
+  const code = (error as any)?.code;
+  return (
+    code === 'resource-exhausted' ||
+    msg.includes('resource-exhausted') ||
+    msg.includes('RESOURCE_EXHAUSTED') ||
+    msg.includes('Quota limit exceeded') ||
+    msg.includes('Quota exceeded') ||
+    msg.includes('Free daily write units')
+  );
+};
+
+export const isQuotaExhausted = (): boolean => {
+  try {
+    const val = localStorage.getItem(QUOTA_EXHAUSTED_KEY);
+    if (!val) return false;
+    const { timestamp } = JSON.parse(val);
+    // Quota resets daily (~24h, verify within 8h window)
+    if (Date.now() - timestamp < 8 * 60 * 60 * 1000) {
+      return true;
+    }
+    localStorage.removeItem(QUOTA_EXHAUSTED_KEY);
+    return false;
+  } catch {
+    return false;
+  }
+};
+
+export const markQuotaExhausted = () => {
+  try {
+    localStorage.setItem(QUOTA_EXHAUSTED_KEY, JSON.stringify({ timestamp: Date.now() }));
+    console.info('Firestore: Modo almacenamiento local activo (cuota diaria alcanzada). Datos preservados localmente.');
+  } catch {}
+};
+
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  if (isQuotaError(error)) {
+    markQuotaExhausted();
+  }
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -68,7 +111,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  if (!isQuotaError(error)) {
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+  } else {
+    console.warn('Firestore Quota Notice: Almacenamiento local activo por límite diario gratuito de escrituras.');
+  }
   return errInfo;
 }
 
@@ -107,78 +154,117 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): T {
 // Points API
 // -------------------------------------------------------------
 export const saveAllPointsToFirebase = async (points: MeasurementPoint[], timeoutMs = 8000): Promise<void> => {
-  const savePromise = (async () => {
-    const chunkSize = 400;
-    for (let i = 0; i < points.length; i += chunkSize) {
-      const chunk = points.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-      chunk.forEach(point => {
-        const docRef = doc(db, 'points', point.id);
-        batch.set(docRef, cleanForFirestore(point), { merge: true });
-      });
-      try {
-        await batch.commit();
-      } catch (error) {
-        handleFirestoreError(error, OperationType.WRITE, 'points');
-        throw error;
+  if (isQuotaExhausted()) {
+    return;
+  }
+  try {
+    const savePromise = (async () => {
+      const chunkSize = 400;
+      for (let i = 0; i < points.length; i += chunkSize) {
+        const chunk = points.slice(i, i + chunkSize);
+        const batch = writeBatch(db);
+        chunk.forEach(point => {
+          const docRef = doc(db, 'points', point.id);
+          batch.set(docRef, cleanForFirestore(point), { merge: true });
+        });
+        try {
+          await batch.commit();
+        } catch (error) {
+          if (isQuotaError(error)) {
+            markQuotaExhausted();
+            return;
+          }
+          handleFirestoreError(error, OperationType.WRITE, 'points');
+          throw error;
+        }
       }
+
+      try {
+        await setDoc(doc(db, 'project_meta', 'sync'), {
+          lastSynced: new Date().toISOString(),
+          totalPoints: points.length
+        }, { merge: true });
+      } catch (err) {
+        if (isQuotaError(err)) {
+          markQuotaExhausted();
+        } else {
+          handleFirestoreError(err, OperationType.WRITE, 'project_meta/sync');
+        }
+      }
+    })();
+
+    const timeoutPromise = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('Sincronización excedió el tiempo límite (8s)')), timeoutMs)
+    );
+
+    await Promise.race([savePromise, timeoutPromise]);
+  } catch (err) {
+    if (isQuotaError(err)) {
+      markQuotaExhausted();
+      return;
     }
-
-    try {
-      await setDoc(doc(db, 'project_meta', 'sync'), {
-        lastSynced: new Date().toISOString(),
-        totalPoints: points.length
-      }, { merge: true });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, 'project_meta/sync');
-    }
-  })();
-
-  const timeoutPromise = new Promise<void>((_, reject) =>
-    setTimeout(() => reject(new Error('Sincronización excedió el tiempo límite (8s)')), timeoutMs)
-  );
-
-  await Promise.race([savePromise, timeoutPromise]);
+    console.warn('saveAllPointsToFirebase note:', err);
+  }
 };
 
 export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promise<void> => {
+  if (isQuotaExhausted()) {
+    return;
+  }
   const docRef = doc(db, 'points', point.id);
   try {
     await setDoc(docRef, cleanForFirestore(point), { merge: true });
-    await setDoc(doc(db, 'project_meta', 'sync'), {
-      lastSynced: new Date().toISOString()
-    }, { merge: true });
+    try {
+      await setDoc(doc(db, 'project_meta', 'sync'), {
+        lastSynced: new Date().toISOString()
+      }, { merge: true });
+    } catch {}
   } catch (error) {
+    if (isQuotaError(error)) {
+      markQuotaExhausted();
+      return;
+    }
     handleFirestoreError(error, OperationType.WRITE, `points/${point.id}`);
-    throw error;
   }
 };
 
 export const deletePointFromFirebase = async (pointId: string): Promise<void> => {
+  if (isQuotaExhausted()) {
+    return;
+  }
   const docRef = doc(db, 'points', pointId);
   try {
     await deleteDoc(docRef);
   } catch (error) {
+    if (isQuotaError(error)) {
+      markQuotaExhausted();
+      return;
+    }
     handleFirestoreError(error, OperationType.DELETE, `points/${pointId}`);
-    throw error;
   }
 };
 
 export const deleteMultiplePointsFromFirebase = async (pointIds: string[]): Promise<void> => {
-  const chunkSize = 400;
-  for (let i = 0; i < pointIds.length; i += chunkSize) {
-    const chunk = pointIds.slice(i, i + chunkSize);
-    const batch = writeBatch(db);
-    chunk.forEach(id => {
-      const docRef = doc(db, 'points', id);
-      batch.delete(docRef);
-    });
-    try {
+  if (isQuotaExhausted()) {
+    return;
+  }
+  try {
+    const chunkSize = 400;
+    for (let i = 0; i < pointIds.length; i += chunkSize) {
+      const chunk = pointIds.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      chunk.forEach(id => {
+        const docRef = doc(db, 'points', id);
+        batch.delete(docRef);
+      });
       await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'points');
-      throw error;
     }
+  } catch (error) {
+    if (isQuotaError(error)) {
+      markQuotaExhausted();
+      return;
+    }
+    handleFirestoreError(error, OperationType.DELETE, 'points');
   }
 };
 
@@ -211,25 +297,40 @@ export const loadPointsFromFirebase = async (timeoutMs = 5000): Promise<Measurem
 // Materials API
 // -------------------------------------------------------------
 export const saveAllMaterialsToFirebase = async (materials: MaterialItem[], timeoutMs = 6000): Promise<void> => {
-  const savePromise = (async () => {
-    const batch = writeBatch(db);
-    materials.forEach(mat => {
-      const docRef = doc(db, 'materials', mat.id);
-      batch.set(docRef, cleanForFirestore(mat), { merge: true });
-    });
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'materials');
-      throw error;
+  if (isQuotaExhausted()) {
+    return;
+  }
+  try {
+    const savePromise = (async () => {
+      const batch = writeBatch(db);
+      materials.forEach(mat => {
+        const docRef = doc(db, 'materials', mat.id);
+        batch.set(docRef, cleanForFirestore(mat), { merge: true });
+      });
+      try {
+        await batch.commit();
+      } catch (error) {
+        if (isQuotaError(error)) {
+          markQuotaExhausted();
+          return;
+        }
+        handleFirestoreError(error, OperationType.WRITE, 'materials');
+        throw error;
+      }
+    })();
+
+    const timeoutPromise = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('Sincronización materiales agotada')), timeoutMs)
+    );
+
+    await Promise.race([savePromise, timeoutPromise]);
+  } catch (err) {
+    if (isQuotaError(err)) {
+      markQuotaExhausted();
+      return;
     }
-  })();
-
-  const timeoutPromise = new Promise<void>((_, reject) =>
-    setTimeout(() => reject(new Error('Sincronización materiales agotada')), timeoutMs)
-  );
-
-  await Promise.race([savePromise, timeoutPromise]);
+    console.warn('saveAllMaterialsToFirebase note:', err);
+  }
 };
 
 export const loadMaterialsFromFirebase = async (timeoutMs = 5000): Promise<MaterialItem[] | null> => {
@@ -261,25 +362,40 @@ export const loadMaterialsFromFirebase = async (timeoutMs = 5000): Promise<Mater
 // Costs API
 // -------------------------------------------------------------
 export const saveAllCostsToFirebase = async (costs: CostCategory[], timeoutMs = 6000): Promise<void> => {
-  const savePromise = (async () => {
-    const batch = writeBatch(db);
-    costs.forEach(cost => {
-      const docRef = doc(db, 'costs', cost.id);
-      batch.set(docRef, cleanForFirestore(cost), { merge: true });
-    });
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'costs');
-      throw error;
+  if (isQuotaExhausted()) {
+    return;
+  }
+  try {
+    const savePromise = (async () => {
+      const batch = writeBatch(db);
+      costs.forEach(cost => {
+        const docRef = doc(db, 'costs', cost.id);
+        batch.set(docRef, cleanForFirestore(cost), { merge: true });
+      });
+      try {
+        await batch.commit();
+      } catch (error) {
+        if (isQuotaError(error)) {
+          markQuotaExhausted();
+          return;
+        }
+        handleFirestoreError(error, OperationType.WRITE, 'costs');
+        throw error;
+      }
+    })();
+
+    const timeoutPromise = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('Sincronización costos agotada')), timeoutMs)
+    );
+
+    await Promise.race([savePromise, timeoutPromise]);
+  } catch (err) {
+    if (isQuotaError(err)) {
+      markQuotaExhausted();
+      return;
     }
-  })();
-
-  const timeoutPromise = new Promise<void>((_, reject) =>
-    setTimeout(() => reject(new Error('Sincronización costos agotada')), timeoutMs)
-  );
-
-  await Promise.race([savePromise, timeoutPromise]);
+    console.warn('saveAllCostsToFirebase note:', err);
+  }
 };
 
 export const loadCostsFromFirebase = async (timeoutMs = 5000): Promise<CostCategory[] | null> => {
@@ -311,25 +427,40 @@ export const loadCostsFromFirebase = async (timeoutMs = 5000): Promise<CostCateg
 // Junction Boxes API
 // -------------------------------------------------------------
 export const saveAllBoxesToFirebase = async (boxes: JunctionBox[], timeoutMs = 6000): Promise<void> => {
-  const savePromise = (async () => {
-    const batch = writeBatch(db);
-    boxes.forEach(box => {
-      const docRef = doc(db, 'junction_boxes', box.id);
-      batch.set(docRef, cleanForFirestore(box), { merge: true });
-    });
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'junction_boxes');
-      throw error;
+  if (isQuotaExhausted()) {
+    return;
+  }
+  try {
+    const savePromise = (async () => {
+      const batch = writeBatch(db);
+      boxes.forEach(box => {
+        const docRef = doc(db, 'junction_boxes', box.id);
+        batch.set(docRef, cleanForFirestore(box), { merge: true });
+      });
+      try {
+        await batch.commit();
+      } catch (error) {
+        if (isQuotaError(error)) {
+          markQuotaExhausted();
+          return;
+        }
+        handleFirestoreError(error, OperationType.WRITE, 'junction_boxes');
+        throw error;
+      }
+    })();
+
+    const timeoutPromise = new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('Sincronización cajas agotada')), timeoutMs)
+    );
+
+    await Promise.race([savePromise, timeoutPromise]);
+  } catch (err) {
+    if (isQuotaError(err)) {
+      markQuotaExhausted();
+      return;
     }
-  })();
-
-  const timeoutPromise = new Promise<void>((_, reject) =>
-    setTimeout(() => reject(new Error('Sincronización cajas agotada')), timeoutMs)
-  );
-
-  await Promise.race([savePromise, timeoutPromise]);
+    console.warn('saveAllBoxesToFirebase note:', err);
+  }
 };
 
 export const loadBoxesFromFirebase = async (timeoutMs = 5000): Promise<JunctionBox[] | null> => {

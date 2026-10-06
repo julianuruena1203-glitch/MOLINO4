@@ -42,7 +42,8 @@ import {
   subscribeToPoints,
   subscribeToMaterials,
   subscribeToBoxes,
-  subscribeToCosts
+  subscribeToCosts,
+  isQuotaExhausted
 } from './lib/firebase';
 
 const STORAGE_KEY_POINTS = 'vib_monitor_points_v10';
@@ -337,35 +338,18 @@ export default function App() {
         if (cloudPoints && cloudPoints.length > 0) {
           const normPoints = deduplicatePoints(cloudPoints.map(normalizePoint));
           setPoints(normPoints);
-        } else {
-          // First time seeding database in background
-          saveAllPointsToFirebase(INITIAL_POINTS, 6000).catch(err => {
-            console.warn('Initial point seeding note:', err);
-          });
         }
 
         if (cloudMaterials && cloudMaterials.length > 0) {
           setMaterials(cloudMaterials);
-        } else {
-          saveAllMaterialsToFirebase(INITIAL_MATERIALS, 4000).catch(err => {
-            console.warn('Initial materials seeding note:', err);
-          });
         }
 
         if (cloudBoxes && cloudBoxes.length > 0) {
           setJunctionBoxes(cloudBoxes);
-        } else {
-          saveAllBoxesToFirebase(INITIAL_JUNCTION_BOXES, 4000).catch(err => {
-            console.warn('Initial boxes seeding note:', err);
-          });
         }
 
         if (cloudCosts && cloudCosts.length > 0) {
           setCategories(cloudCosts);
-        } else {
-          saveAllCostsToFirebase(INITIAL_COST_CATEGORIES, 4000).catch(err => {
-            console.warn('Initial costs seeding note:', err);
-          });
         }
 
         clearTimeout(safetyTimer);
@@ -423,6 +407,12 @@ export default function App() {
 
   // Force sync trigger
   const handleForceSync = async () => {
+    if (isQuotaExhausted()) {
+      showToast('Modo local activo: Los datos están respaldados en tu dispositivo.');
+      setSyncStatus('synced');
+      return;
+    }
+
     setSyncStatus('syncing');
     showToast('Sincronizando con Firebase Firestore...');
     const safetyTimer = setTimeout(() => {
@@ -552,7 +542,6 @@ export default function App() {
     });
 
     setMaterials(updated);
-    saveAllMaterialsToFirebase(updated).catch(console.error);
   };
 
   // Export Backup JSON

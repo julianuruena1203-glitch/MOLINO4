@@ -15,6 +15,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { MeasurementPoint } from '../types';
+import { isQuotaExhausted } from '../lib/firebase';
 
 export type ActiveTab = 'points' | 'materials' | 'progress' | 'costs' | 'boxes' | 'area2' | 'area3' | 'sotano';
 
@@ -69,12 +70,30 @@ export const Header: React.FC<HeaderProps> = ({
                   MEDREMOTM4
                 </span>
                 <span className={`inline-flex items-center gap-1 text-[10px] font-mono ${
-                  syncStatus === 'syncing' ? 'text-amber-300' : syncStatus === 'error' ? 'text-rose-300' : 'text-emerald-400'
+                  isQuotaExhausted()
+                    ? 'text-sky-300'
+                    : syncStatus === 'syncing' 
+                      ? 'text-amber-300' 
+                      : syncStatus === 'error' 
+                        ? 'text-rose-300' 
+                        : 'text-emerald-400'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
-                    syncStatus === 'syncing' ? 'bg-amber-400 animate-spin' : syncStatus === 'error' ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'
+                    isQuotaExhausted()
+                      ? 'bg-sky-400'
+                      : syncStatus === 'syncing' 
+                        ? 'bg-amber-400 animate-spin' 
+                        : syncStatus === 'error' 
+                          ? 'bg-rose-400' 
+                          : 'bg-emerald-400 animate-pulse'
                   }`}></span>
-                  {syncStatus === 'syncing' ? 'Sincronizando...' : syncStatus === 'error' ? 'Modo Local' : 'Firebase Conectado'}
+                  {isQuotaExhausted() 
+                    ? 'Modo Local Seguro' 
+                    : syncStatus === 'syncing' 
+                      ? 'Sincronizando...' 
+                      : syncStatus === 'error' 
+                        ? 'Modo Local' 
+                        : 'Firebase Conectado'}
                 </span>
               </div>
               <h1 className="text-xs sm:text-sm font-black tracking-tight text-white uppercase mt-0.5">
@@ -105,21 +124,30 @@ export const Header: React.FC<HeaderProps> = ({
               id="cloud-sync-button"
               onClick={onForceSync}
               className={`px-2.5 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                syncStatus === 'syncing'
-                  ? 'bg-amber-950/40 border-amber-500/50 text-amber-300'
-                  : syncStatus === 'error'
-                    ? 'bg-rose-950/40 border-rose-500/50 text-rose-300'
-                    : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50'
+                isQuotaExhausted()
+                  ? 'bg-sky-950/40 border-sky-500/40 text-sky-300 hover:bg-sky-900/50'
+                  : syncStatus === 'syncing'
+                    ? 'bg-amber-950/40 border-amber-500/50 text-amber-300'
+                    : syncStatus === 'error'
+                      ? 'bg-rose-950/40 border-rose-500/50 text-rose-300'
+                      : 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50'
               }`}
               title={
-                syncStatus === 'syncing'
-                  ? 'Sincronizando con Firebase Firestore...'
-                  : syncStatus === 'error'
-                    ? 'Modo local activo. Clic para forzar sincronización con Firebase.'
-                    : 'Base de datos sincronizada con Firebase Firestore. Clic para forzar sincronización.'
+                isQuotaExhausted()
+                  ? 'Modo local seguro activo: Todos los cambios están respaldados en este dispositivo. Clic para verificar.'
+                  : syncStatus === 'syncing'
+                    ? 'Sincronizando con Firebase Firestore...'
+                    : syncStatus === 'error'
+                      ? 'Modo local activo. Clic para forzar sincronización con Firebase.'
+                      : 'Base de datos sincronizada con Firebase Firestore. Clic para forzar sincronización.'
               }
             >
-              {syncStatus === 'syncing' ? (
+              {isQuotaExhausted() ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
+                  <span className="text-[11px]">Guardado Local</span>
+                </>
+              ) : syncStatus === 'syncing' ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
                   <span className="text-[11px]">Sincronizando...</span>
