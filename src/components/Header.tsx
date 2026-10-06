@@ -11,7 +11,8 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Compass
+  Compass,
+  Image as ImageIcon
 } from 'lucide-react';
 import { MeasurementPoint } from '../types';
 
@@ -67,9 +68,13 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-mono text-[11px] font-bold tracking-wider">
                   MEDREMOTM4
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Firebase Conectado
+                <span className={`inline-flex items-center gap-1 text-[10px] font-mono ${
+                  syncStatus === 'syncing' ? 'text-amber-300' : syncStatus === 'error' ? 'text-rose-300' : 'text-emerald-400'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    syncStatus === 'syncing' ? 'bg-amber-400 animate-spin' : syncStatus === 'error' ? 'bg-rose-400' : 'bg-emerald-400 animate-pulse'
+                  }`}></span>
+                  {syncStatus === 'syncing' ? 'Sincronizando...' : syncStatus === 'error' ? 'Modo Local' : 'Firebase Conectado'}
                 </span>
               </div>
               <h1 className="text-xs sm:text-sm font-black tracking-tight text-white uppercase mt-0.5">
@@ -108,10 +113,10 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
               title={
                 syncStatus === 'syncing'
-                  ? 'Sincronizando con Firebase Firestore en la nube...'
+                  ? 'Sincronizando con Firebase Firestore...'
                   : syncStatus === 'error'
-                    ? 'Error de conexión. Clic para reintentar sincronizar con Firebase'
-                    : 'Conectado a Firebase Firestore en tiempo real. Clic para forzar sincronización.'
+                    ? 'Modo local activo. Clic para forzar sincronización con Firebase.'
+                    : 'Base de datos sincronizada con Firebase Firestore. Clic para forzar sincronización.'
               }
             >
               {syncStatus === 'syncing' ? (
@@ -126,8 +131,8 @@ export const Header: React.FC<HeaderProps> = ({
                 </>
               ) : (
                 <>
-                  <Cloud className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-[11px]">Firebase Nube</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-[11px]">Sincronizado</span>
                 </>
               )}
             </button>
@@ -225,8 +230,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
-            <Compass className="w-4 h-4" />
-            Visor 2D Area 1
+            <ImageIcon className="w-4 h-4" />
+            Visor 2D Área 1
           </button>
 
           <button
@@ -238,8 +243,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
-            <Compass className="w-4 h-4" />
-            Visor 2D Area 2
+            <ImageIcon className="w-4 h-4" />
+            Visor 2D Área 2
           </button>
 
           <button
@@ -251,8 +256,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
-            <Compass className="w-4 h-4" />
-            Visor 2D Area 3
+            <ImageIcon className="w-4 h-4" />
+            Visor 2D Área 3
           </button>
 
           <button
@@ -264,8 +269,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
             }`}
           >
-            <Compass className="w-4 h-4" />
-            Visor 2D Sotano
+            <ImageIcon className="w-4 h-4" />
+            Visor 2D Sótano
           </button>
         </nav>
       </div>

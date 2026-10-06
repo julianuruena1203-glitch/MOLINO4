@@ -308,11 +308,11 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
 
   return (
     <div className="w-full space-y-5">
-      {/* ================= BARRA SUPERIOR INFORMATIVA DEL ESQUEMA FIJO ORIGINAL ================= */}
+      {/* ================= BARRA SUPERIOR INFORMATIVA DE LA FOTO PNG OFICIAL ================= */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 shadow-2xs">
-            <Compass className="w-5 h-5" />
+            <ImageIcon className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              {schemaConfig.subtitle} · Plano original de ingeniería fijado sin modificaciones.
+              {schemaConfig.subtitle} · Foto PNG oficial adjunta sin modificaciones.
             </p>
           </div>
         </div>
@@ -366,15 +366,15 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
             </button>
           </div>
 
-          {/* Locked Badge */}
+          {/* Badge */}
           <div className="px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-            <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Esquema Fijo e Inmutable</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Foto PNG Oficial Fijada</span>
           </div>
         </div>
       </div>
 
-      {/* ================= 1. ESQUEMA TÉCNICO OFICIAL ORIGINAL (IMAGEN ADJUNTA FIJA) ================= */}
+      {/* ================= 1. FOTO PNG OFICIAL ORIGINAL (SIN ESQUEMAS) ================= */}
       <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         {/* Banner de archivo oficial */}
         <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
@@ -429,7 +429,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
         {/* Footer del visor con aviso de integridad */}
         <div className="bg-slate-50/80 border-t border-slate-200/80 px-4 py-2 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
           <span>Foto PNG oficial · Smurfit Westrock Molino 4 ({schemaConfig.filename})</span>
-          <span>Esquemas vectoriales eliminados · Foto original intacta</span>
+          <span className="text-emerald-700 font-medium">Esquemas eliminados · Foto PNG original sin modificar</span>
         </div>
       </div>
 

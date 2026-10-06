@@ -72,15 +72,17 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   return errInfo;
 }
 
-// Test initial connection
-export async function testConnection(): Promise<boolean> {
+// Test initial connection with timeout
+export async function testConnection(timeoutMs = 2500): Promise<boolean> {
   try {
-    await getDocFromServer(doc(db, 'project_meta', 'connection_test'));
+    const testPromise = getDocs(collection(db, 'project_meta'));
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Firebase connection timeout')), timeoutMs)
+    );
+    await Promise.race([testPromise, timeoutPromise]);
     return true;
   } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Firebase client is currently offline or connecting.");
-    }
+    console.warn("Firebase connection test warning:", error);
     return false;
   }
 }
@@ -104,31 +106,39 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): T {
 // -------------------------------------------------------------
 // Points API
 // -------------------------------------------------------------
-export const saveAllPointsToFirebase = async (points: MeasurementPoint[]): Promise<void> => {
-  const chunkSize = 400;
-  for (let i = 0; i < points.length; i += chunkSize) {
-    const chunk = points.slice(i, i + chunkSize);
-    const batch = writeBatch(db);
-    chunk.forEach(point => {
-      const docRef = doc(db, 'points', point.id);
-      batch.set(docRef, cleanForFirestore(point), { merge: true });
-    });
-    try {
-      await batch.commit();
-    } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'points');
-      throw error;
+export const saveAllPointsToFirebase = async (points: MeasurementPoint[], timeoutMs = 8000): Promise<void> => {
+  const savePromise = (async () => {
+    const chunkSize = 400;
+    for (let i = 0; i < points.length; i += chunkSize) {
+      const chunk = points.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      chunk.forEach(point => {
+        const docRef = doc(db, 'points', point.id);
+        batch.set(docRef, cleanForFirestore(point), { merge: true });
+      });
+      try {
+        await batch.commit();
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'points');
+        throw error;
+      }
     }
-  }
 
-  try {
-    await setDoc(doc(db, 'project_meta', 'sync'), {
-      lastSynced: new Date().toISOString(),
-      totalPoints: points.length
-    }, { merge: true });
-  } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'project_meta/sync');
-  }
+    try {
+      await setDoc(doc(db, 'project_meta', 'sync'), {
+        lastSynced: new Date().toISOString(),
+        totalPoints: points.length
+      }, { merge: true });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'project_meta/sync');
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error('Sincronización excedió el tiempo límite (8s)')), timeoutMs)
+  );
+
+  await Promise.race([savePromise, timeoutPromise]);
 };
 
 export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promise<void> => {
@@ -172,17 +182,25 @@ export const deleteMultiplePointsFromFirebase = async (pointIds: string[]): Prom
   }
 };
 
-export const loadPointsFromFirebase = async (): Promise<MeasurementPoint[] | null> => {
+export const loadPointsFromFirebase = async (timeoutMs = 5000): Promise<MeasurementPoint[] | null> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'points'));
-    if (querySnapshot.empty) {
-      return null;
-    }
-    const points: MeasurementPoint[] = [];
-    querySnapshot.forEach(docSnap => {
-      points.push(docSnap.data() as MeasurementPoint);
-    });
-    return points;
+    const fetchPromise = (async () => {
+      const querySnapshot = await getDocs(collection(db, 'points'));
+      if (querySnapshot.empty) {
+        return null;
+      }
+      const points: MeasurementPoint[] = [];
+      querySnapshot.forEach(docSnap => {
+        points.push(docSnap.data() as MeasurementPoint);
+      });
+      return points;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), timeoutMs)
+    );
+
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'points');
     return null;
@@ -192,31 +210,47 @@ export const loadPointsFromFirebase = async (): Promise<MeasurementPoint[] | nul
 // -------------------------------------------------------------
 // Materials API
 // -------------------------------------------------------------
-export const saveAllMaterialsToFirebase = async (materials: MaterialItem[]): Promise<void> => {
-  const batch = writeBatch(db);
-  materials.forEach(mat => {
-    const docRef = doc(db, 'materials', mat.id);
-    batch.set(docRef, cleanForFirestore(mat), { merge: true });
-  });
-  try {
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'materials');
-    throw error;
-  }
+export const saveAllMaterialsToFirebase = async (materials: MaterialItem[], timeoutMs = 6000): Promise<void> => {
+  const savePromise = (async () => {
+    const batch = writeBatch(db);
+    materials.forEach(mat => {
+      const docRef = doc(db, 'materials', mat.id);
+      batch.set(docRef, cleanForFirestore(mat), { merge: true });
+    });
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'materials');
+      throw error;
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error('Sincronización materiales agotada')), timeoutMs)
+  );
+
+  await Promise.race([savePromise, timeoutPromise]);
 };
 
-export const loadMaterialsFromFirebase = async (): Promise<MaterialItem[] | null> => {
+export const loadMaterialsFromFirebase = async (timeoutMs = 5000): Promise<MaterialItem[] | null> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'materials'));
-    if (querySnapshot.empty) {
-      return null;
-    }
-    const materials: MaterialItem[] = [];
-    querySnapshot.forEach(docSnap => {
-      materials.push(docSnap.data() as MaterialItem);
-    });
-    return materials;
+    const fetchPromise = (async () => {
+      const querySnapshot = await getDocs(collection(db, 'materials'));
+      if (querySnapshot.empty) {
+        return null;
+      }
+      const materials: MaterialItem[] = [];
+      querySnapshot.forEach(docSnap => {
+        materials.push(docSnap.data() as MaterialItem);
+      });
+      return materials;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), timeoutMs)
+    );
+
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'materials');
     return null;
@@ -226,31 +260,47 @@ export const loadMaterialsFromFirebase = async (): Promise<MaterialItem[] | null
 // -------------------------------------------------------------
 // Costs API
 // -------------------------------------------------------------
-export const saveAllCostsToFirebase = async (costs: CostCategory[]): Promise<void> => {
-  const batch = writeBatch(db);
-  costs.forEach(cost => {
-    const docRef = doc(db, 'costs', cost.id);
-    batch.set(docRef, cleanForFirestore(cost), { merge: true });
-  });
-  try {
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'costs');
-    throw error;
-  }
+export const saveAllCostsToFirebase = async (costs: CostCategory[], timeoutMs = 6000): Promise<void> => {
+  const savePromise = (async () => {
+    const batch = writeBatch(db);
+    costs.forEach(cost => {
+      const docRef = doc(db, 'costs', cost.id);
+      batch.set(docRef, cleanForFirestore(cost), { merge: true });
+    });
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'costs');
+      throw error;
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error('Sincronización costos agotada')), timeoutMs)
+  );
+
+  await Promise.race([savePromise, timeoutPromise]);
 };
 
-export const loadCostsFromFirebase = async (): Promise<CostCategory[] | null> => {
+export const loadCostsFromFirebase = async (timeoutMs = 5000): Promise<CostCategory[] | null> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'costs'));
-    if (querySnapshot.empty) {
-      return null;
-    }
-    const costs: CostCategory[] = [];
-    querySnapshot.forEach(docSnap => {
-      costs.push(docSnap.data() as CostCategory);
-    });
-    return costs;
+    const fetchPromise = (async () => {
+      const querySnapshot = await getDocs(collection(db, 'costs'));
+      if (querySnapshot.empty) {
+        return null;
+      }
+      const costs: CostCategory[] = [];
+      querySnapshot.forEach(docSnap => {
+        costs.push(docSnap.data() as CostCategory);
+      });
+      return costs;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), timeoutMs)
+    );
+
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'costs');
     return null;
@@ -260,31 +310,47 @@ export const loadCostsFromFirebase = async (): Promise<CostCategory[] | null> =>
 // -------------------------------------------------------------
 // Junction Boxes API
 // -------------------------------------------------------------
-export const saveAllBoxesToFirebase = async (boxes: JunctionBox[]): Promise<void> => {
-  const batch = writeBatch(db);
-  boxes.forEach(box => {
-    const docRef = doc(db, 'junction_boxes', box.id);
-    batch.set(docRef, cleanForFirestore(box), { merge: true });
-  });
-  try {
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'junction_boxes');
-    throw error;
-  }
+export const saveAllBoxesToFirebase = async (boxes: JunctionBox[], timeoutMs = 6000): Promise<void> => {
+  const savePromise = (async () => {
+    const batch = writeBatch(db);
+    boxes.forEach(box => {
+      const docRef = doc(db, 'junction_boxes', box.id);
+      batch.set(docRef, cleanForFirestore(box), { merge: true });
+    });
+    try {
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'junction_boxes');
+      throw error;
+    }
+  })();
+
+  const timeoutPromise = new Promise<void>((_, reject) =>
+    setTimeout(() => reject(new Error('Sincronización cajas agotada')), timeoutMs)
+  );
+
+  await Promise.race([savePromise, timeoutPromise]);
 };
 
-export const loadBoxesFromFirebase = async (): Promise<JunctionBox[] | null> => {
+export const loadBoxesFromFirebase = async (timeoutMs = 5000): Promise<JunctionBox[] | null> => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'junction_boxes'));
-    if (querySnapshot.empty) {
-      return null;
-    }
-    const boxes: JunctionBox[] = [];
-    querySnapshot.forEach(docSnap => {
-      boxes.push(docSnap.data() as JunctionBox);
-    });
-    return boxes;
+    const fetchPromise = (async () => {
+      const querySnapshot = await getDocs(collection(db, 'junction_boxes'));
+      if (querySnapshot.empty) {
+        return null;
+      }
+      const boxes: JunctionBox[] = [];
+      querySnapshot.forEach(docSnap => {
+        boxes.push(docSnap.data() as JunctionBox);
+      });
+      return boxes;
+    })();
+
+    const timeoutPromise = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), timeoutMs)
+    );
+
+    return await Promise.race([fetchPromise, timeoutPromise]);
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'junction_boxes');
     return null;
