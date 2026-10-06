@@ -34,6 +34,14 @@ export const formatCOP = (val: number): string => {
   return `$ ${Math.round(val || 0).toLocaleString('es-CO')} COP`;
 };
 
+// Helper to determine the correct unit: cable 4251480 is always 'und'
+export const getMaterialUnit = (item: MaterialItem): string => {
+  if (item.code === '4251480' || (item.name && item.name.toUpperCase().includes('CB206'))) {
+    return 'und';
+  }
+  return item.unit ? item.unit.toLowerCase() : 'und';
+};
+
 export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
   materials,
   points,
@@ -60,6 +68,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
   const [formCode, setFormCode] = useState('');
   const [formName, setFormName] = useState('');
   const [formCategory, setFormCategory] = useState<MaterialItem['category']>('sensors');
+  const [formUnit, setFormUnit] = useState<string>('und');
   const [formRequiredQty, setFormRequiredQty] = useState<number>(0);
   const [formInstalledQty, setFormInstalledQty] = useState<number>(0);
   const [formUnitCost, setFormUnitCost] = useState<number>(0);
@@ -72,16 +81,36 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar consumo automático con puntos instalados
+  // Para cables (und), el consumo es 1 cable por punto donde se tendió cable (und), no por metros
   const handleSyncWithPoints = () => {
     const installedSensors = points.filter(p => p.stages?.sensorMounted).length;
     const installedCables = points.filter(p => p.stages?.cablePulled).length;
 
     const updated = materials.map(mat => {
+      const isCableUnd = 
+        mat.code === '4251480' || 
+        mat.name.toUpperCase().includes('CB206') || 
+        mat.name.toUpperCase().includes('CABLE ACELEROMETRO') ||
+        mat.unit === 'und' || mat.unit === 'UND';
+
+      if (isCableUnd) {
+        return { 
+          ...mat, 
+          unit: 'und',
+          installedQty: installedCables, 
+          requiredQty: mat.requiredQty || points.length 
+        };
+      }
       if (mat.category === 'sensors') {
-        return { ...mat, installedQty: installedSensors, requiredQty: points.length };
+        return { ...mat, installedQty: installedSensors, requiredQty: mat.requiredQty || points.length };
       }
       if (mat.category === 'cables') {
-        return { ...mat, installedQty: installedCables, requiredQty: points.length, unit: 'cables' };
+        return { 
+          ...mat, 
+          installedQty: installedCables, 
+          requiredQty: mat.requiredQty || points.length, 
+          unit: 'und' 
+        };
       }
       return mat;
     });
@@ -94,6 +123,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
     setFormCode('');
     setFormName('');
     setFormCategory('sensors');
+    setFormUnit('und');
     setFormRequiredQty(0);
     setFormInstalledQty(0);
     setFormUnitCost(0);
@@ -109,6 +139,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
     setFormCode(item.code);
     setFormName(item.name);
     setFormCategory(item.category);
+    setFormUnit(getMaterialUnit(item));
     setFormRequiredQty(item.requiredQty);
     setFormInstalledQty(item.installedQty);
     setFormUnitCost(item.unitCost);
@@ -191,6 +222,8 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
     const trimmedImageUrl = formImageUrl.trim() || undefined;
 
     if (editingMaterial) {
+      const isCable4251480 = formCode.trim() === '4251480' || formName.toUpperCase().includes('CB206');
+      const finalUnit = isCable4251480 ? 'und' : (formUnit.trim() || 'und');
       const updated = materials.map(m => {
         if (m.id === editingMaterial.id) {
           return {
@@ -198,6 +231,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
             code: formCode.trim(),
             name: formName.trim(),
             category: formCategory,
+            unit: finalUnit,
             requiredQty: formRequiredQty,
             installedQty: formInstalledQty,
             unitCost: formUnitCost,
@@ -209,12 +243,14 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
       });
       onUpdateMaterials(updated);
     } else {
+      const isCable4251480 = formCode.trim() === '4251480' || formName.toUpperCase().includes('CB206');
+      const finalUnit = isCable4251480 ? 'und' : (formUnit.trim() || 'und');
       const newItem: MaterialItem = {
         id: `mat-${Date.now()}`,
         code: formCode.trim(),
         name: formName.trim(),
         category: formCategory,
-        unit: 'UND',
+        unit: finalUnit,
         requiredQty: formRequiredQty,
         stockQty: formRequiredQty,
         installedQty: formInstalledQty,
@@ -492,7 +528,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
                         {item.category === 'sensors' ? 'Sensores' : item.category === 'cables' ? 'Cables' : item.category === 'boxes' ? 'Cajas de Conexiones' : item.category}
                       </td>
                       <td className="p-3 text-right font-mono font-semibold text-slate-800">
-                        {item.requiredQty.toLocaleString()} {item.unit || 'UND'}
+                        {item.requiredQty.toLocaleString()} {getMaterialUnit(item)}
                       </td>
                       <td className="p-3 text-right font-mono font-bold text-sky-700">
                         {item.installedQty.toLocaleString()}
@@ -633,7 +669,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-slate-500 font-medium">Instalación en campo:</span>
                           <span className="font-mono font-bold text-slate-900">
-                            {item.installedQty} / {item.requiredQty} {item.unit || 'UND'}
+                            {item.installedQty} / {item.requiredQty} {getMaterialUnit(item)}
                           </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -727,8 +763,8 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
                 />
               </div>
 
-              {/* Cantidad & Costo Unitario */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Cantidad, Unidad & Costo Unitario */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Cantidad Requerida</label>
                   <input
@@ -737,8 +773,22 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
                     required
                     value={formRequiredQty}
                     onChange={(e) => setFormRequiredQty(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold"
                   />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Unidad de Medida</label>
+                  <select
+                    value={formUnit}
+                    onChange={(e) => setFormUnit(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold"
+                  >
+                    <option value="und">und (Unidad / Pieza)</option>
+                    <option value="m">m (Metros)</option>
+                    <option value="global">global</option>
+                    <option value="rollo">rollo</option>
+                    <option value="tramo">tramo</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Costo Unitario (COP)</label>
@@ -750,7 +800,7 @@ export const MaterialsManager: React.FC<MaterialsManagerProps> = ({
                     value={formUnitCost}
                     onChange={(e) => setFormUnitCost(parseFloat(e.target.value) || 0)}
                     placeholder="Ej: 1437200"
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold"
                   />
                   <p className="text-[10px] text-slate-500 mt-1 font-mono">
                     {formUnitCost > 0 ? formatCOP(formUnitCost) : '$ 0 COP'}

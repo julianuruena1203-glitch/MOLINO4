@@ -125,10 +125,23 @@ export const INITIAL_MATERIALS: MaterialItem[] = [
     "supplier": "CTC Industrial"
   },
   {
+    "id": "mat-4251480",
+    "code": "4251480",
+    "name": "CABLE ACELEROMETRO CB206-A2R-005M/025M-L",
+    "description": "Cable ensamblado acelerómetro CTC para monitoreo de vibraciones",
+    "category": "cables",
+    "requiredQty": 161,
+    "installedQty": 0,
+    "unitCost": 1161872,
+    "unit": "und",
+    "stockQty": 161,
+    "supplier": "CTC"
+  },
+  {
     "id": "mat-003",
     "code": "CBL-STP-2COND",
     "name": "Cable Blindado Par Trenzado 2x20 AWG",
-    "description": "Cable apantallado con cubierta exterior de Tefl\u00f3n resistente a hidrocarburos",
+    "description": "Cable apantallado con cubierta exterior de Teflón resistente a hidrocarburos",
     "category": "cables",
     "requiredQty": 3200,
     "installedQty": 2150,

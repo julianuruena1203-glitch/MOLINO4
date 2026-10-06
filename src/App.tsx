@@ -302,7 +302,20 @@ export default function App() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_MATERIALS);
       if (saved) {
-        return JSON.parse(saved);
+        let parsed: MaterialItem[] = JSON.parse(saved);
+        let has4251480 = false;
+        parsed = parsed.map(m => {
+          if (m.code === '4251480' || m.name.toUpperCase().includes('CB206')) {
+            has4251480 = true;
+            return { ...m, unit: 'und' };
+          }
+          return m;
+        });
+        if (!has4251480) {
+          const default4251480 = INITIAL_MATERIALS.find(m => m.code === '4251480');
+          if (default4251480) parsed.push(default4251480);
+        }
+        return parsed;
       }
     } catch (e) {
       console.error('Error loading materials from localStorage:', e);
@@ -671,22 +684,40 @@ export default function App() {
   // Synchronize materials based on installed points
   const syncMaterialsWithPoints = (currentPoints: MeasurementPoint[]) => {
     const installed = currentPoints.filter(p => p.status === 'installed' || p.status === 'verified');
-    const installedCount = installed.length;
-    const cableCount = installed.reduce((acc, p) => acc + (p.cableMeters || 0), 0);
-    const conduitCount = Math.round(cableCount * 0.45);
+    const installedSensorsCount = currentPoints.filter(p => p.stages?.sensorMounted || p.status === 'installed' || p.status === 'verified').length;
+    // Consumption per cable (und): 1 cable per point where cable is pulled / installed
+    const installedCablesCount = currentPoints.filter(p => p.stages?.cablePulled || p.status === 'installed' || p.status === 'verified').length;
+    const cableMetersCount = installed.reduce((acc, p) => acc + (p.cableMeters || 0), 0);
+    const conduitCount = Math.round(cableMetersCount * 0.45);
 
     const updated = materials.map(mat => {
-      if (mat.category === 'sensors' && mat.code.includes('100MV')) {
-        return { ...mat, installedQty: installedCount };
+      const isCableUnd = 
+        mat.code === '4251480' || 
+        mat.name.toUpperCase().includes('CB206') || 
+        mat.name.toUpperCase().includes('CABLE ACELEROMETRO') ||
+        mat.unit === 'und' || mat.unit === 'UND';
+
+      if (isCableUnd) {
+        return { 
+          ...mat, 
+          unit: 'und',
+          installedQty: installedCablesCount 
+        };
+      }
+      if (mat.category === 'sensors') {
+        return { ...mat, installedQty: installedSensorsCount };
       }
       if (mat.category === 'cables') {
-        return { ...mat, installedQty: cableCount };
+        return { 
+          ...mat, 
+          installedQty: mat.unit === 'm' ? cableMetersCount : installedCablesCount 
+        };
       }
       if (mat.category === 'conduit') {
         return { ...mat, installedQty: conduitCount };
       }
-      if (mat.code.includes('STD')) {
-        return { ...mat, installedQty: installedCount };
+      if (mat.code.includes('STD') || mat.category === 'mounting') {
+        return { ...mat, installedQty: installedSensorsCount };
       }
       return mat;
     });
