@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { MeasurementPoint, JunctionBox, PointStatus } from '../types';
 import { getCleanComponentName, formatBoxId, getNomenclature, getEquipoSortWeight } from './PointsTable';
-import { OriginalSchematicImage } from './OriginalSchematicImage';
 import { 
   Compass,
   Check,
@@ -20,7 +19,8 @@ import {
   Maximize2,
   Minimize2,
   Lock,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Upload
 } from 'lucide-react';
 
 interface Schematic2DViewerProps {
@@ -50,19 +50,20 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
   // Selected point for detailed stage management drawer
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
 
-  // Zoom & Pan state for the fixed original CAD schematic
+  // Zoom & Pan state for the PNG photo
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
-  // Configuration for the official attached image matching user files
+  // Configuration for the official attached PNG photo matching user files
   const schemaConfig = useMemo(() => {
     if (isSotano) {
       return {
         imageNumber: 4,
         title: 'Imagen 4 · Visor 2D Área Sótano',
-        subtitle: 'Retornos de Lona (Primera, Segunda, Tercera y Cuarta Sección)',
+        subtitle: 'Foto PNG oficial de Retornos de Lona (Primera, Segunda, Tercera y Cuarta Sección)',
         badge: 'Imagen 4 · Sótano',
         filename: 'Sotano.png',
+        photoUrl: '/Sotano.png',
         areaLabel: 'Área Sótano · Retornos'
       };
     }
@@ -70,9 +71,10 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
       return {
         imageNumber: 3,
         title: 'Imagen 3 · Visor 2D Área 3',
-        subtitle: 'Cuarta Sección (Secadores 31 al 38, Rodillos de Lona y Piñones XIV al XVI)',
+        subtitle: 'Foto PNG oficial de Cuarta Sección (Secadores 31 al 38, Rodillos de Lona y Piñones XIV al XVI)',
         badge: 'Imagen 3 · Área 3',
         filename: 'Area 3.png',
+        photoUrl: '/Area 3.png',
         areaLabel: 'Secadores 31 al 38 · JB #3'
       };
     }
@@ -80,29 +82,58 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
       return {
         imageNumber: 2,
         title: 'Imagen 2 · Visor 2D Área 2',
-        subtitle: 'Tercera Sección, Unidad Clupak M4 y Segunda Sección (Secadores 17 al 30)',
+        subtitle: 'Foto PNG oficial de Tercera Sección, Unidad Clupak M4 y Segunda Sección (Secadores 17 al 30)',
         badge: 'Imagen 2 · Área 2',
         filename: 'Area 2.png',
+        photoUrl: '/Area 2.png',
         areaLabel: 'Clupak & Secadores 17 al 30 · JB #2'
       };
     }
     return {
       imageNumber: 1,
       title: 'Imagen 1 · Visor 2D Área 1',
-      subtitle: 'Primera Sección y Segunda Sección (Secadores 1 al 16, Rodillos y Piñones I al III)',
+      subtitle: 'Foto PNG oficial de Primera y Segunda Sección (Secadores 1 al 16, Rodillos y Piñones I al III)',
       badge: 'Imagen 1 · Área 1',
       filename: 'Area 1.png',
+      photoUrl: '/Area 1.png',
       areaLabel: 'Secadores 1 al 16 · JB #1'
     };
   }, [currentArea, isSotano]);
 
+  // Support local attached photo with persistence in localStorage
+  const [customPhoto, setCustomPhoto] = useState<string | null>(null);
+
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`medremotm4_photo_${schemaConfig.filename}`);
+      setCustomPhoto(saved || null);
+    } catch {
+      setCustomPhoto(null);
+    }
     setZoomLevel(1);
   }, [schemaConfig]);
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.25, 2.8));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.25, 0.75));
   const handleResetZoom = () => setZoomLevel(1);
+
+  const handleAttachPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setCustomPhoto(dataUrl);
+        try {
+          localStorage.setItem(`medremotm4_photo_${schemaConfig.filename}`, dataUrl);
+        } catch (err) {
+          console.warn('Storage quota exceeded', err);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Points of the current area, sorted exactly as in the Listado General table
   const areaPoints = useMemo(() => {
@@ -346,7 +377,7 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
       {/* ================= 1. ESQUEMA TÉCNICO OFICIAL ORIGINAL (IMAGEN ADJUNTA FIJA) ================= */}
       <div className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         {/* Banner de archivo oficial */}
-        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between text-xs text-slate-600">
+        <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-bold font-mono text-[11px] border border-sky-200">
               Imagen {schemaConfig.imageNumber}
@@ -354,28 +385,51 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
             <ImageIcon className="w-4 h-4 text-sky-600" />
             <span className="font-semibold text-slate-800">{schemaConfig.filename}</span>
             <span className="text-slate-400">·</span>
-            <span className="text-[11px] text-slate-500">{schemaConfig.areaLabel} · Esquema original intacto</span>
+            <span className="text-[11px] text-slate-500">{schemaConfig.areaLabel} · Foto PNG original sin modificar</span>
           </div>
-          <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md border border-emerald-200">
-            <ShieldCheck className="w-3 h-3 text-emerald-600" />
-            <span>Fijo e Inalterable</span>
+
+          <div className="flex items-center gap-2">
+            {/* Input para adjuntar foto PNG de cada área */}
+            <label 
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors border border-slate-300 shadow-2xs"
+              title={`Adjuntar archivo PNG para ${schemaConfig.title}`}
+            >
+              <Upload className="w-3.5 h-3.5 text-sky-600" />
+              <span>Adjuntar PNG</span>
+              <input
+                type="file"
+                accept="image/png,image/*"
+                onChange={handleAttachPhoto}
+                className="hidden"
+              />
+            </label>
+
+            <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded-md border border-emerald-200">
+              <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span>Foto PNG Oficial</span>
+            </div>
           </div>
         </div>
 
-        {/* Canvas de imagen con zoom y scroll suave */}
+        {/* Canvas de foto PNG con zoom y scroll suave */}
         <div className="relative w-full p-4 sm:p-6 overflow-auto bg-white flex items-center justify-center min-h-[380px] max-h-[640px]">
           <div 
-            className="transition-transform duration-150 ease-out origin-center w-full max-w-[1100px]"
+            className="transition-transform duration-150 ease-out origin-center flex items-center justify-center w-full"
             style={{ transform: `scale(${zoomLevel})` }}
           >
-            <OriginalSchematicImage area={area} className="max-h-[520px] mx-auto filter contrast-[1.02]" />
+            <img
+              src={customPhoto || schemaConfig.photoUrl}
+              alt={schemaConfig.title}
+              className="max-h-[520px] max-w-full w-auto object-contain select-none"
+              referrerPolicy="no-referrer"
+            />
           </div>
         </div>
 
-        {/* Footer del esquema con aviso de integridad */}
+        {/* Footer del visor con aviso de integridad */}
         <div className="bg-slate-50/80 border-t border-slate-200/80 px-4 py-2 flex flex-wrap items-center justify-between text-[11px] text-slate-500">
-          <span>Diseño original de ingeniería mecánica · Smurfit Westrock Molino 4</span>
-          <span>Esquema protegido · No se permite eliminar ni adjuntar otro plano</span>
+          <span>Foto PNG oficial · Smurfit Westrock Molino 4 ({schemaConfig.filename})</span>
+          <span>Esquemas vectoriales eliminados · Foto original intacta</span>
         </div>
       </div>
 
@@ -429,10 +483,15 @@ export const Schematic2DViewer: React.FC<Schematic2DViewerProps> = ({
 
           <div className="flex-1 bg-white rounded-2xl border border-slate-800 overflow-auto p-6 flex items-center justify-center">
             <div 
-              className="transition-transform duration-150 ease-out origin-center w-full max-w-[1250px]"
+              className="transition-transform duration-150 ease-out origin-center flex items-center justify-center"
               style={{ transform: `scale(${zoomLevel})` }}
             >
-              <OriginalSchematicImage area={area} className="max-h-[82vh] mx-auto" />
+              <img
+                src={customPhoto || schemaConfig.photoUrl}
+                alt={schemaConfig.title}
+                className="max-h-[82vh] w-auto max-w-none object-contain select-none"
+                referrerPolicy="no-referrer"
+              />
             </div>
           </div>
         </div>
