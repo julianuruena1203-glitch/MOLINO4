@@ -47,6 +47,7 @@ export interface MeasurementPoint {
   technician?: string;
   installedDate?: string;
   lastUpdated?: string;
+  updatedAt?: string;
   originalLabel?: string;
   coordinates?: { x: number; y: number };
 }

@@ -153,8 +153,12 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): T {
 // -------------------------------------------------------------
 // Points API
 // -------------------------------------------------------------
-export const saveAllPointsToFirebase = async (points: MeasurementPoint[], timeoutMs = 8000): Promise<void> => {
-  if (isQuotaExhausted()) {
+export const saveAllPointsToFirebase = async (
+  points: MeasurementPoint[], 
+  timeoutMs = 8000,
+  forceAttempt = false
+): Promise<void> => {
+  if (isQuotaExhausted() && !forceAttempt) {
     return;
   }
   try {
@@ -167,16 +171,7 @@ export const saveAllPointsToFirebase = async (points: MeasurementPoint[], timeou
           const docRef = doc(db, 'points', point.id);
           batch.set(docRef, cleanForFirestore(point), { merge: true });
         });
-        try {
-          await batch.commit();
-        } catch (error) {
-          if (isQuotaError(error)) {
-            markQuotaExhausted();
-            return;
-          }
-          handleFirestoreError(error, OperationType.WRITE, 'points');
-          throw error;
-        }
+        await batch.commit();
       }
 
       try {
@@ -187,10 +182,13 @@ export const saveAllPointsToFirebase = async (points: MeasurementPoint[], timeou
       } catch (err) {
         if (isQuotaError(err)) {
           markQuotaExhausted();
-        } else {
-          handleFirestoreError(err, OperationType.WRITE, 'project_meta/sync');
         }
       }
+
+      // Success! Clear quota flag if it was set
+      try {
+        localStorage.removeItem(QUOTA_EXHAUSTED_KEY);
+      } catch {}
     })();
 
     const timeoutPromise = new Promise<void>((_, reject) =>
@@ -215,6 +213,7 @@ export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promis
   try {
     await setDoc(docRef, cleanForFirestore(point), { merge: true });
     try {
+      localStorage.removeItem(QUOTA_EXHAUSTED_KEY);
       await setDoc(doc(db, 'project_meta', 'sync'), {
         lastSynced: new Date().toISOString()
       }, { merge: true });

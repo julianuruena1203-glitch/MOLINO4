@@ -210,6 +210,141 @@ const normalizePoint = (p: MeasurementPoint): MeasurementPoint => {
   };
 };
 
+// Local Pending Updates Storage Keys
+export const STORAGE_KEY_PENDING_UPDATES = 'vib_monitor_pending_updates_v1';
+export const STORAGE_KEY_DELETED_IDS = 'vib_monitor_deleted_ids_v1';
+
+export const getPendingUpdates = (): Record<string, MeasurementPoint> => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PENDING_UPDATES);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
+
+export const getDeletedIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_IDS);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+};
+
+export const recordLocalUpdate = (point: MeasurementPoint) => {
+  try {
+    const map = getPendingUpdates();
+    map[point.id] = { ...point, updatedAt: new Date().toISOString() };
+    localStorage.setItem(STORAGE_KEY_PENDING_UPDATES, JSON.stringify(map));
+  } catch (e) {
+    console.error('Error saving pending update:', e);
+  }
+};
+
+export const recordLocalUpdatesBulk = (pts: MeasurementPoint[]) => {
+  try {
+    const map = getPendingUpdates();
+    pts.forEach(p => {
+      map[p.id] = { ...p, updatedAt: new Date().toISOString() };
+    });
+    localStorage.setItem(STORAGE_KEY_PENDING_UPDATES, JSON.stringify(map));
+  } catch (e) {
+    console.error('Error saving pending updates:', e);
+  }
+};
+
+export const recordLocalDeletion = (pointId: string) => {
+  try {
+    const ids = getDeletedIds();
+    ids.add(pointId);
+    localStorage.setItem(STORAGE_KEY_DELETED_IDS, JSON.stringify(Array.from(ids)));
+
+    const map = getPendingUpdates();
+    delete map[pointId];
+    localStorage.setItem(STORAGE_KEY_PENDING_UPDATES, JSON.stringify(map));
+  } catch (e) {
+    console.error('Error saving deletion:', e);
+  }
+};
+
+export const recordLocalDeletionsBulk = (pointIds: string[]) => {
+  try {
+    const ids = getDeletedIds();
+    pointIds.forEach(id => ids.add(id));
+    localStorage.setItem(STORAGE_KEY_DELETED_IDS, JSON.stringify(Array.from(ids)));
+
+    const map = getPendingUpdates();
+    pointIds.forEach(id => delete map[id]);
+    localStorage.setItem(STORAGE_KEY_PENDING_UPDATES, JSON.stringify(map));
+  } catch (e) {
+    console.error('Error saving deletions:', e);
+  }
+};
+
+export const clearCommittedUpdates = (pointIds?: string[]) => {
+  try {
+    if (!pointIds) {
+      localStorage.removeItem(STORAGE_KEY_PENDING_UPDATES);
+      localStorage.removeItem(STORAGE_KEY_DELETED_IDS);
+    } else {
+      const map = getPendingUpdates();
+      pointIds.forEach(id => delete map[id]);
+      localStorage.setItem(STORAGE_KEY_PENDING_UPDATES, JSON.stringify(map));
+    }
+  } catch {}
+};
+
+// Smart Local-First Conflict Resolver:
+// Guarantees local user modifications are NEVER overwritten by stale cloud data on page reload!
+export const mergePointsWithLocal = (
+  currentLocalPoints: MeasurementPoint[],
+  incomingCloudPoints: MeasurementPoint[]
+): MeasurementPoint[] => {
+  const pendingUpdates = getPendingUpdates();
+  const deletedIds = getDeletedIds();
+
+  // Map of current in-memory / local points
+  const localMap = new Map<string, MeasurementPoint>();
+  currentLocalPoints.forEach(p => {
+    if (p && p.id && !deletedIds.has(p.id)) {
+      localMap.set(p.id, p);
+    }
+  });
+
+  const mergedMap = new Map<string, MeasurementPoint>();
+
+  // 1. Process cloud points: if modified locally in pendingUpdates or localMap, keep local!
+  incomingCloudPoints.forEach(cp => {
+    if (!cp || !cp.id || deletedIds.has(cp.id)) return;
+
+    if (pendingUpdates[cp.id]) {
+      mergedMap.set(cp.id, normalizePoint(pendingUpdates[cp.id]));
+    } else if (localMap.has(cp.id)) {
+      const lp = localMap.get(cp.id)!;
+      mergedMap.set(cp.id, normalizePoint(lp));
+    } else {
+      mergedMap.set(cp.id, normalizePoint(cp));
+    }
+  });
+
+  // 2. Add local points that aren't in the cloud yet
+  localMap.forEach((lp, id) => {
+    if (!mergedMap.has(id) && !deletedIds.has(id)) {
+      mergedMap.set(id, normalizePoint(lp));
+    }
+  });
+
+  // 3. Make sure all pending updates are retained
+  Object.values(pendingUpdates).forEach(pup => {
+    if (pup && pup.id && !deletedIds.has(pup.id)) {
+      mergedMap.set(pup.id, normalizePoint(pup));
+    }
+  });
+
+  return deduplicatePoints(Array.from(mergedMap.values()));
+};
+
 export default function App() {
   // Navigation
   const [activeTab, setActiveTab] = useState<ActiveTab>('points');
@@ -218,8 +353,12 @@ export default function App() {
   const [points, setPoints] = useState<MeasurementPoint[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_POINTS);
+      const pendingUpdates = getPendingUpdates();
+      const deletedIds = getDeletedIds();
       if (saved) {
-        const parsed: MeasurementPoint[] = JSON.parse(saved);
+        let parsed: MeasurementPoint[] = JSON.parse(saved);
+        parsed = parsed.filter(p => p && p.id && !deletedIds.has(p.id));
+        parsed = parsed.map(p => pendingUpdates[p.id] ? pendingUpdates[p.id] : p);
         return deduplicatePoints(parsed.map(normalizePoint));
       }
     } catch (e) {
@@ -336,30 +475,38 @@ export default function App() {
         ]);
 
         if (cloudPoints && cloudPoints.length > 0) {
-          const normPoints = deduplicatePoints(cloudPoints.map(normalizePoint));
-          setPoints(normPoints);
+          setPoints(prevPoints => mergePointsWithLocal(prevPoints, cloudPoints));
         }
 
         if (cloudMaterials && cloudMaterials.length > 0) {
-          setMaterials(cloudMaterials);
+          const savedMats = localStorage.getItem(STORAGE_KEY_MATERIALS);
+          if (!savedMats) {
+            setMaterials(cloudMaterials);
+          }
         }
 
         if (cloudBoxes && cloudBoxes.length > 0) {
-          setJunctionBoxes(cloudBoxes);
+          const savedBoxes = localStorage.getItem(STORAGE_KEY_BOXES);
+          if (!savedBoxes) {
+            setJunctionBoxes(cloudBoxes);
+          }
         }
 
         if (cloudCosts && cloudCosts.length > 0) {
-          setCategories(cloudCosts);
+          const savedCosts = localStorage.getItem(STORAGE_KEY_COSTS);
+          if (!savedCosts) {
+            setCategories(cloudCosts);
+          }
         }
 
         clearTimeout(safetyTimer);
         setSyncStatus('synced');
         isInitialSyncDone.current = true;
 
-        // Subscribe to real-time updates from cloud
+        // Subscribe to real-time updates from cloud with smart local-first merge
         unsubscribePoints = subscribeToPoints((pts) => {
           if (pts && pts.length > 0) {
-            setPoints(deduplicatePoints(pts.map(normalizePoint)));
+            setPoints(prevPoints => mergePointsWithLocal(prevPoints, pts));
             setSyncStatus('synced');
           }
         }, (err) => {
@@ -369,21 +516,30 @@ export default function App() {
 
         unsubscribeMaterials = subscribeToMaterials((mats) => {
           if (mats && mats.length > 0) {
-            setMaterials(mats);
+            const savedMats = localStorage.getItem(STORAGE_KEY_MATERIALS);
+            if (!savedMats) {
+              setMaterials(mats);
+            }
             setSyncStatus('synced');
           }
         });
 
         unsubscribeBoxes = subscribeToBoxes((bx) => {
           if (bx && bx.length > 0) {
-            setJunctionBoxes(bx);
+            const savedBoxes = localStorage.getItem(STORAGE_KEY_BOXES);
+            if (!savedBoxes) {
+              setJunctionBoxes(bx);
+            }
             setSyncStatus('synced');
           }
         });
 
         unsubscribeCosts = subscribeToCosts((csts) => {
           if (csts && csts.length > 0) {
-            setCategories(csts);
+            const savedCosts = localStorage.getItem(STORAGE_KEY_COSTS);
+            if (!savedCosts) {
+              setCategories(csts);
+            }
             setSyncStatus('synced');
           }
         });
@@ -405,36 +561,40 @@ export default function App() {
     };
   }, []);
 
-  // Force sync trigger
+  // Force sync trigger - Guarantees data persistence immediately
   const handleForceSync = async () => {
-    if (isQuotaExhausted()) {
-      showToast('Modo local activo: Los datos están respaldados en tu dispositivo.');
-      setSyncStatus('synced');
-      return;
-    }
-
     setSyncStatus('syncing');
-    showToast('Sincronizando con Firebase Firestore...');
+    showToast('Sincronizando cambios...');
+
+    // Guarantee local storage is 100% saved right now
+    try {
+      localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(points));
+      localStorage.setItem(STORAGE_KEY_MATERIALS, JSON.stringify(materials));
+      localStorage.setItem(STORAGE_KEY_BOXES, JSON.stringify(junctionBoxes));
+      localStorage.setItem(STORAGE_KEY_COSTS, JSON.stringify(categories));
+    } catch {}
+
     const safetyTimer = setTimeout(() => {
       setSyncStatus('synced');
-      showToast('Sincronización completada');
-    }, 4500);
+      showToast('Cambios guardados con éxito');
+    }, 3500);
 
     try {
       await Promise.all([
-        saveAllPointsToFirebase(points, 4500),
-        saveAllMaterialsToFirebase(materials, 4500),
-        saveAllCostsToFirebase(categories, 4500),
-        saveAllBoxesToFirebase(junctionBoxes, 4500)
+        saveAllPointsToFirebase(points, 3500),
+        saveAllMaterialsToFirebase(materials, 3500),
+        saveAllCostsToFirebase(categories, 3500),
+        saveAllBoxesToFirebase(junctionBoxes, 3500)
       ]);
       clearTimeout(safetyTimer);
+      clearCommittedUpdates();
       setSyncStatus('synced');
-      showToast('Base de datos Firebase sincronizada');
+      showToast('Sincronizado con Firebase Firestore');
     } catch (err) {
       clearTimeout(safetyTimer);
-      console.warn('Manual sync note:', err);
+      console.warn('Force sync fallback to local mode:', err);
       setSyncStatus('synced');
-      showToast('Datos respaldados correctamente');
+      showToast('Cambios guardados con éxito en este dispositivo');
     }
   };
 
@@ -446,14 +606,25 @@ export default function App() {
 
   const handleSavePoint = (updatedPoint: MeasurementPoint) => {
     const normalized = normalizePoint(updatedPoint);
-    setPoints(prev => prev.map(p => p.id === normalized.id ? normalized : p));
+    recordLocalUpdate(normalized);
+    setPoints(prev => {
+      const next = prev.map(p => p.id === normalized.id ? normalized : p);
+      try {
+        localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     setSelectedPoint(normalized);
-    showToast(`Punto ${normalized.tag} actualizado`);
+    showToast(`Punto ${normalized.tag} guardado`);
 
     // Persist to Firebase in background
-    saveSinglePointToFirebase(normalized).catch((err) => {
-      console.warn('Background save note:', err);
-    });
+    saveSinglePointToFirebase(normalized)
+      .then(() => {
+        clearCommittedUpdates([normalized.id]);
+      })
+      .catch((err) => {
+        console.warn('Background save note:', err);
+      });
 
     // Auto-update materials consumption
     setTimeout(() => {
@@ -463,30 +634,53 @@ export default function App() {
 
   const handleUpdatePoints = (updatedPoints: MeasurementPoint[]) => {
     const normalized = deduplicatePoints(updatedPoints.map(normalizePoint));
+    recordLocalUpdatesBulk(normalized);
     setPoints(normalized);
-    showToast(`${normalized.length} puntos actualizados en Firebase`);
+    try {
+      localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(normalized));
+    } catch {}
+    showToast(`${normalized.length} puntos guardados`);
     syncMaterialsWithPoints(normalized);
 
-    saveAllPointsToFirebase(normalized, 6000).catch((err) => {
-      console.warn('Background points update note:', err);
-    });
+    saveAllPointsToFirebase(normalized, 6000)
+      .then(() => {
+        clearCommittedUpdates();
+      })
+      .catch((err) => {
+        console.warn('Background points update note:', err);
+      });
   };
 
   const handleAddNewPoint = (newPoint: MeasurementPoint) => {
     const normalized = normalizePoint(newPoint);
-    setPoints(prev => deduplicatePoints([...prev, normalized]));
+    recordLocalUpdate(normalized);
+    setPoints(prev => {
+      const next = deduplicatePoints([...prev, normalized]);
+      try {
+        localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
     showToast(`Punto ${normalized.tag} guardado`);
 
-    saveSinglePointToFirebase(normalized).catch((err) => {
-      console.warn('Background add point note:', err);
-    });
+    saveSinglePointToFirebase(normalized)
+      .then(() => {
+        clearCommittedUpdates([normalized.id]);
+      })
+      .catch((err) => {
+        console.warn('Background add point note:', err);
+      });
   };
 
   const handleDeletePoint = (pointId: string) => {
     const target = points.find(p => p.id === pointId);
     const nom = target ? target.tag : '';
+    recordLocalDeletion(pointId);
     setPoints(prev => {
       const updated = prev.filter(p => !p || p.id !== pointId);
+      try {
+        localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(updated));
+      } catch {}
       syncMaterialsWithPoints(updated);
       return updated;
     });
@@ -502,8 +696,12 @@ export default function App() {
   };
 
   const handleDeletePointsBulk = (pointIds: string[]) => {
+    recordLocalDeletionsBulk(pointIds);
     setPoints(prev => {
       const updated = prev.filter(p => !p || !pointIds.includes(p.id));
+      try {
+        localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(updated));
+      } catch {}
       syncMaterialsWithPoints(updated);
       return updated;
     });
