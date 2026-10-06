@@ -85,116 +85,41 @@ export const deduplicatePoints = (rawPoints: MeasurementPoint[]): MeasurementPoi
 // - Side: Lado transmisión
 // - Junction box: JB #1, JB #2, JB #3
 const normalizePoint = (p: MeasurementPoint): MeasurementPoint => {
-  let tag = p.tag ? p.tag.trim() : '';
+  if (!p) return p;
 
+  let tag = p.tag ? String(p.tag).trim() : '';
+  let name = p.name ? String(p.name).trim() : '';
+
+  // Only assign fallback tag if tag is completely blank/empty
   if (!tag) {
     if (p.type === 'dryer') {
       const match = (p.name || '').match(/#?(\d+)/) || (p.originalLabel ? p.originalLabel.match(/(\d+)/) : null);
-      if (match) {
-        tag = `${parseInt(match[1], 10)}S`;
-      } else {
-        tag = '1S';
-      }
+      tag = match ? `${parseInt(match[1], 10)}S` : '1S';
     } else if (p.type === 'pinion') {
-      const initialMatch = INITIAL_POINTS.find(ip => ip.id === p.id);
-      if (initialMatch && initialMatch.tag && /^P-[A-Z0-9]+$/i.test(initialMatch.tag.trim())) {
-        tag = initialMatch.tag.trim().toUpperCase();
-      } else {
-        const raw = (p.originalLabel || p.name || '').toUpperCase();
-        if (raw.includes('AA')) tag = 'P-AA';
-        else if (raw.includes('XXVIII')) tag = 'P-XXVIII';
-        else if (raw.includes('XXVII')) tag = 'P-XXVII';
-        else if (raw.includes('XXVI')) tag = 'P-XXVI';
-        else if (raw.includes('XXIX')) tag = 'P-XXIX';
-        else if (raw.includes('XXV')) tag = 'P-XXV';
-        else if (raw.includes('XXIV')) tag = 'P-XXIV';
-        else if (raw.includes('XXIII')) tag = 'P-XXIII';
-        else if (raw.includes('XXII')) tag = 'P-XXII';
-        else if (raw.includes('XXI')) tag = 'P-XXI';
-        else if (raw.includes('XX')) tag = 'P-XX';
-        else if (raw.includes('XVIII')) tag = 'P-XVIII';
-        else if (raw.includes('XVII')) tag = 'P-XVII';
-        else if (raw.includes('XVI')) tag = 'P-XVI';
-        else if (raw.includes('XIX')) tag = 'P-XIX';
-        else if (raw.includes('XIV')) tag = 'P-XIV';
-        else if (raw.includes('XV')) tag = 'P-XV';
-        else if (raw.includes('XIII')) tag = 'P-XIII';
-        else if (raw.includes('XII')) tag = 'P-XII';
-        else if (raw.includes('XI')) tag = 'P-XI';
-        else if (raw.includes('X')) tag = 'P-X';
-        else if (raw.includes('VIII')) tag = 'P-VIII';
-        else if (raw.includes('VII')) tag = 'P-VII';
-        else if (raw.includes('VI')) tag = 'P-VI';
-        else if (raw.includes('IV')) tag = 'P-IV';
-        else if (raw.includes('IX')) tag = 'P-IX';
-        else if (raw.includes('V')) tag = 'P-V';
-        else if (raw.includes('III')) tag = 'P-III';
-        else if (raw.includes('II')) tag = 'P-II';
-        else if (/\bI\b/.test(raw) || raw === 'I' || raw.endsWith('-I')) tag = 'P-I';
-        else if (/\bA\b/.test(raw) || raw === 'A' || raw.endsWith('-A')) tag = 'P-A';
-        else if (/\bB\b/.test(raw) || raw === 'B' || raw.endsWith('-B')) tag = 'P-B';
-        else if (/\bC\b/.test(raw) || raw === 'C' || raw.endsWith('-C')) tag = 'P-C';
-        else tag = 'P-AA';
-      }
-    } else if (p.type === 'felt_roll_upper' || p.type === 'felt_roll_pocket') {
-      const initialMatch = INITIAL_POINTS.find(ip => ip.id === p.id);
-      if (initialMatch && initialMatch.tag && /^\d+R$/i.test(initialMatch.tag.trim())) {
-        tag = initialMatch.tag.trim().toUpperCase();
-      } else {
-        const initialFeltPoints = INITIAL_POINTS.filter(ip => ip.type === 'felt_roll_upper' || ip.type === 'felt_roll_pocket');
-        const idx = initialFeltPoints.findIndex(ip => ip.id === p.id);
-        if (idx !== -1) {
-          tag = `${idx + 1}R`;
-        } else {
-          const numMatch = (p.originalLabel || p.name || '').match(/(\d+)/);
-          tag = numMatch ? `${parseInt(numMatch[1], 10)}R` : '1R';
-        }
-      }
-    }
-  } else if (p.type === 'dryer') {
-    if (!/^\d+[A-Z]?S?$/i.test(tag) || /L\d/i.test(tag)) {
-      const match = (p.name && p.name.match(/#\s*(\d+[A-Z]?)/i)) ||
-                    (p.id && p.id.match(/pt-\d+s-(\d+[a-z]?)/i)) ||
-                    (p.originalLabel && p.originalLabel.match(/^(\d+[A-Z]?)/i)) ||
-                    tag.match(/L3-(\d+)/i);
-      if (match) {
-        const rawNum = match[1].toUpperCase().replace(/^0+/, '');
-        tag = rawNum.endsWith('S') || rawNum.endsWith('A') ? rawNum : `${rawNum}S`;
-      } else {
-        tag = '1S';
-      }
-    }
-  } else if (p.type === 'felt_roll_upper' || p.type === 'felt_roll_pocket') {
-    if (!/^\d+R$/i.test(tag)) {
-      const numMatch = tag.match(/(\d+)/) || (p.originalLabel || p.name || '').match(/(\d+)/);
-      tag = numMatch ? `${parseInt(numMatch[1], 10)}R` : '1R';
+      tag = 'P-AA';
+    } else {
+      tag = '1R';
     }
   }
 
-  let name = p.name ? p.name.trim() : '';
-  if (p.type === 'felt_roll_upper' || p.type === 'felt_roll_pocket') {
-    const numMatch = tag.match(/(\d+)/) || (p.tag || '').match(/(\d+)/) || (name || '').match(/#?(\d+)/);
-    if (numMatch) {
-      name = `Rodillo de Lona #${parseInt(numMatch[1], 10)}`;
-    } else {
-      name = 'Rodillo de Lona';
-    }
-  } else if (!name) {
-    if (p.type === 'pinion') {
+  // Only assign fallback name if name is completely blank/empty
+  if (!name) {
+    if (p.type === 'dryer') {
+      const numMatch = tag.match(/(\d+)/);
+      name = numMatch ? `Secador #${numMatch[1]}` : 'Secador';
+    } else if (p.type === 'pinion') {
       name = 'Piñón Intermedio';
     } else {
-      name = 'Secador';
+      const numMatch = tag.match(/(\d+)/);
+      name = numMatch ? `Rodillo #${numMatch[1]}` : 'Rodillo';
     }
-  } else if (name.toLowerCase().startsWith('cilindro secador')) {
-    name = name.replace(/^cilindro\s+secador/i, 'Secador');
   }
 
+  // Preserve boxId if valid; only default if empty
   let boxId = p.boxId;
-  const rawBox = String(boxId || '').trim();
-  if (rawBox === 'JB-01' || rawBox === 'JB Area 1' || rawBox === 'JB #1' || rawBox.includes('1')) boxId = 'JB #1';
-  else if (rawBox === 'JB-02' || rawBox === 'JB Area 2' || rawBox === 'JB #2' || rawBox.includes('2')) boxId = 'JB #2';
-  else if (rawBox === 'JB-03' || rawBox === 'JB Area 3' || rawBox === 'JB #3' || rawBox.includes('3')) boxId = 'JB #3';
-  else boxId = 'JB #1';
+  if (!boxId) {
+    boxId = 'JB #1';
+  }
 
   const coordinates = (p.coordinates && typeof p.coordinates.x === 'number') 
     ? p.coordinates 
@@ -322,7 +247,13 @@ export const mergePointsWithLocal = (
       mergedMap.set(cp.id, normalizePoint(pendingUpdates[cp.id]));
     } else if (localMap.has(cp.id)) {
       const lp = localMap.get(cp.id)!;
-      mergedMap.set(cp.id, normalizePoint(lp));
+      const localTime = lp.updatedAt ? new Date(lp.updatedAt).getTime() : 1;
+      const cloudTime = cp.updatedAt ? new Date(cp.updatedAt).getTime() : 0;
+      if (localTime >= cloudTime) {
+        mergedMap.set(cp.id, normalizePoint(lp));
+      } else {
+        mergedMap.set(cp.id, normalizePoint(cp));
+      }
     } else {
       mergedMap.set(cp.id, normalizePoint(cp));
     }
@@ -580,16 +511,18 @@ export default function App() {
     }, 3500);
 
     try {
-      await Promise.all([
+      const [pointsSaved] = await Promise.all([
         saveAllPointsToFirebase(points, 3500),
         saveAllMaterialsToFirebase(materials, 3500),
         saveAllCostsToFirebase(categories, 3500),
         saveAllBoxesToFirebase(junctionBoxes, 3500)
       ]);
       clearTimeout(safetyTimer);
-      clearCommittedUpdates();
+      if (pointsSaved === true) {
+        clearCommittedUpdates();
+      }
       setSyncStatus('synced');
-      showToast('Sincronizado con Firebase Firestore');
+      showToast('Cambios guardados con éxito');
     } catch (err) {
       clearTimeout(safetyTimer);
       console.warn('Force sync fallback to local mode:', err);
@@ -605,7 +538,11 @@ export default function App() {
   };
 
   const handleSavePoint = (updatedPoint: MeasurementPoint) => {
-    const normalized = normalizePoint(updatedPoint);
+    const withTimestamp: MeasurementPoint = {
+      ...updatedPoint,
+      updatedAt: new Date().toISOString()
+    };
+    const normalized = normalizePoint(withTimestamp);
     recordLocalUpdate(normalized);
     setPoints(prev => {
       const next = prev.map(p => p.id === normalized.id ? normalized : p);
@@ -619,8 +556,10 @@ export default function App() {
 
     // Persist to Firebase in background
     saveSinglePointToFirebase(normalized)
-      .then(() => {
-        clearCommittedUpdates([normalized.id]);
+      .then((success) => {
+        if (success) {
+          clearCommittedUpdates([normalized.id]);
+        }
       })
       .catch((err) => {
         console.warn('Background save note:', err);
@@ -633,7 +572,12 @@ export default function App() {
   };
 
   const handleUpdatePoints = (updatedPoints: MeasurementPoint[]) => {
-    const normalized = deduplicatePoints(updatedPoints.map(normalizePoint));
+    const now = new Date().toISOString();
+    const withTimestamps = updatedPoints.map(p => ({
+      ...p,
+      updatedAt: p.updatedAt || now
+    }));
+    const normalized = deduplicatePoints(withTimestamps.map(normalizePoint));
     recordLocalUpdatesBulk(normalized);
     setPoints(normalized);
     try {
@@ -643,8 +587,10 @@ export default function App() {
     syncMaterialsWithPoints(normalized);
 
     saveAllPointsToFirebase(normalized, 6000)
-      .then(() => {
-        clearCommittedUpdates();
+      .then((success) => {
+        if (success) {
+          clearCommittedUpdates();
+        }
       })
       .catch((err) => {
         console.warn('Background points update note:', err);
@@ -652,7 +598,11 @@ export default function App() {
   };
 
   const handleAddNewPoint = (newPoint: MeasurementPoint) => {
-    const normalized = normalizePoint(newPoint);
+    const withTimestamp: MeasurementPoint = {
+      ...newPoint,
+      updatedAt: new Date().toISOString()
+    };
+    const normalized = normalizePoint(withTimestamp);
     recordLocalUpdate(normalized);
     setPoints(prev => {
       const next = deduplicatePoints([...prev, normalized]);
@@ -661,14 +611,16 @@ export default function App() {
       } catch {}
       return next;
     });
-    showToast(`Punto ${normalized.tag} guardado`);
+    showToast(`Punto ${normalized.tag} registrado`);
 
     saveSinglePointToFirebase(normalized)
-      .then(() => {
-        clearCommittedUpdates([normalized.id]);
+      .then((success) => {
+        if (success) {
+          clearCommittedUpdates([normalized.id]);
+        }
       })
       .catch((err) => {
-        console.warn('Background add point note:', err);
+        console.warn('Background new point note:', err);
       });
   };
 

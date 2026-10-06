@@ -228,11 +228,11 @@ export const PointDetailModal: React.FC<PointDetailModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
               
-              {/* 1. EQUIPO */}
+              {/* 1. NOMENCLATURA */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Hash className="w-3.5 h-3.5 text-sky-600" />
-                  <span>EQUIPO</span>
+                  <span>NOMENCLATURA</span>
                 </label>
                 <div className="relative">
                   <input
@@ -241,18 +241,18 @@ export const PointDetailModal: React.FC<PointDetailModalProps> = ({
                     required
                     value={formData.tag}
                     onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-                    placeholder="Ej: 1S, P-AA, 1R"
+                    placeholder="Ej: 1S, 1R, P-AA"
                     className="w-full bg-white border border-sky-300 rounded-lg px-3 py-2 text-xs font-mono font-bold text-sky-950 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-xs"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">Consecutivo / Tag en plano</p>
+                <p className="text-[10px] text-slate-500 mt-1">Tag / Consecutivo en plano</p>
               </div>
 
-              {/* 2. DESCRIPCIÓN */}
+              {/* 2. NOMBRE */}
               <div>
                 <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
                   <Cpu className="w-3.5 h-3.5 text-slate-600" />
-                  <span>DESCRIPCIÓN</span>
+                  <span>NOMBRE</span>
                 </label>
                 <input
                   id="edit-point-name-input"
@@ -260,7 +260,7 @@ export const PointDetailModal: React.FC<PointDetailModalProps> = ({
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Ej: Secador #1, Piñón Intermedio, Rodillo de Lona"
+                  placeholder="Ej: Secador #1, Rodillo #1, Piñón Intermedio"
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-xs"
                 />
                 <p className="text-[10px] text-slate-500 mt-1">Nombre del activo</p>
@@ -274,14 +274,13 @@ export const PointDetailModal: React.FC<PointDetailModalProps> = ({
                 </label>
                 <select
                   id="edit-point-type-select"
-                  value={formData.type}
+                  value={formData.type === 'felt_roll_pocket' ? 'felt_roll_upper' : formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value as PointType })}
                   className="w-full bg-white border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-xs cursor-pointer"
                 >
                   <option value="dryer">Secador</option>
-                  <option value="felt_roll_upper">Rodillo de Lona</option>
-                  <option value="felt_roll_pocket">Rodillo de Lona (Bolsillo)</option>
-                  <option value="pinion">Piñón Intermedio</option>
+                  <option value="felt_roll_upper">Rodillo</option>
+                  <option value="pinion">Piñón</option>
                 </select>
                 <p className="text-[10px] text-slate-500 mt-1">Categoría mecánica</p>
               </div>

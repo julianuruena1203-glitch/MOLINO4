@@ -33,9 +33,8 @@ export const AddPointModal: React.FC<AddPointModalProps> = ({
       setTag('17S');
       setName('Secador #17');
     } else if (newType === 'felt_roll_upper' || newType === 'felt_roll_pocket') {
-      const defaultTag = newType === 'felt_roll_upper' ? '1R' : '2R';
-      setTag(defaultTag);
-      setName(newType === 'felt_roll_upper' ? 'Rodillo de Lona #1' : 'Rodillo de Lona #2');
+      setTag('1R');
+      setName('Rodillo #1');
     } else if (newType === 'pinion') {
       setTag('P-AA');
       setName('Piñón Intermedio');
@@ -105,66 +104,57 @@ export const AddPointModal: React.FC<AddPointModalProps> = ({
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
           <div>
             <label className="block font-semibold text-slate-700 mb-1">Tipo de Componente</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => handleTypeChange('dryer')}
-                className={`p-2.5 rounded-lg border text-left font-medium transition-colors ${
-                  type === 'dryer' ? 'bg-amber-50 border-amber-500 text-amber-900 font-bold' : 'border-slate-200 text-slate-700'
+                className={`p-2.5 rounded-lg border text-center font-medium transition-colors cursor-pointer ${
+                  type === 'dryer' ? 'bg-amber-50 border-amber-500 text-amber-900 font-bold ring-1 ring-amber-400 shadow-xs' : 'border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
-                Secador (1S L3)
+                Secador
               </button>
               <button
                 type="button"
                 onClick={() => handleTypeChange('felt_roll_upper')}
-                className={`p-2.5 rounded-lg border text-left font-medium transition-colors ${
-                  type === 'felt_roll_upper' ? 'bg-sky-50 border-sky-500 text-sky-900 font-bold' : 'border-slate-200 text-slate-700'
+                className={`p-2.5 rounded-lg border text-center font-medium transition-colors cursor-pointer ${
+                  type === 'felt_roll_upper' || type === 'felt_roll_pocket' ? 'bg-sky-50 border-sky-500 text-sky-900 font-bold ring-1 ring-sky-400 shadow-xs' : 'border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
-                Rodillo Superior (1R, 2R...)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTypeChange('felt_roll_pocket')}
-                className={`p-2.5 rounded-lg border text-left font-medium transition-colors ${
-                  type === 'felt_roll_pocket' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold' : 'border-slate-200 text-slate-700'
-                }`}
-              >
-                Rodillo Bolsillo (1R, 2R...)
+                Rodillo
               </button>
               <button
                 type="button"
                 onClick={() => handleTypeChange('pinion')}
-                className={`p-2.5 rounded-lg border text-left font-medium transition-colors ${
-                  type === 'pinion' ? 'bg-purple-50 border-purple-500 text-purple-900 font-bold' : 'border-slate-200 text-slate-700'
+                className={`p-2.5 rounded-lg border text-center font-medium transition-colors cursor-pointer ${
+                  type === 'pinion' ? 'bg-purple-50 border-purple-500 text-purple-900 font-bold ring-1 ring-purple-400 shadow-xs' : 'border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
-                Piñones (P-AA, P-A, P-I...)
+                Piñón
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Tag / Nomenclatura Solicitada</label>
+              <label className="block font-semibold text-slate-700 mb-1">Nomenclatura</label>
               <input
                 type="text"
                 required
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
-                placeholder="Ej: 1S, 2S, 1R, P-AA, P-A, P-I"
+                placeholder="Ej: 1S, 1R, P-AA"
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-mono font-bold"
               />
             </div>
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Nombre / Ubicación</label>
+              <label className="block font-semibold text-slate-700 mb-1">Nombre</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ej: Secador #17, Piñón Intermedio, Rodillo de Lona"
+                placeholder="Ej: Secador #17, Rodillo #1, Piñón Intermedio"
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2"
               />
             </div>

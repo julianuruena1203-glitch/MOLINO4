@@ -157,11 +157,12 @@ export const saveAllPointsToFirebase = async (
   points: MeasurementPoint[], 
   timeoutMs = 8000,
   forceAttempt = false
-): Promise<void> => {
+): Promise<boolean> => {
   if (isQuotaExhausted() && !forceAttempt) {
-    return;
+    return false;
   }
   try {
+    let success = false;
     const savePromise = (async () => {
       const chunkSize = 400;
       for (let i = 0; i < points.length; i += chunkSize) {
@@ -189,6 +190,7 @@ export const saveAllPointsToFirebase = async (
       try {
         localStorage.removeItem(QUOTA_EXHAUSTED_KEY);
       } catch {}
+      success = true;
     })();
 
     const timeoutPromise = new Promise<void>((_, reject) =>
@@ -196,18 +198,20 @@ export const saveAllPointsToFirebase = async (
     );
 
     await Promise.race([savePromise, timeoutPromise]);
+    return success;
   } catch (err) {
     if (isQuotaError(err)) {
       markQuotaExhausted();
-      return;
+      return false;
     }
     console.warn('saveAllPointsToFirebase note:', err);
+    return false;
   }
 };
 
-export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promise<void> => {
+export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promise<boolean> => {
   if (isQuotaExhausted()) {
-    return;
+    return false;
   }
   const docRef = doc(db, 'points', point.id);
   try {
@@ -218,12 +222,14 @@ export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promis
         lastSynced: new Date().toISOString()
       }, { merge: true });
     } catch {}
+    return true;
   } catch (error) {
     if (isQuotaError(error)) {
       markQuotaExhausted();
-      return;
+      return false;
     }
     handleFirestoreError(error, OperationType.WRITE, `points/${point.id}`);
+    return false;
   }
 };
 

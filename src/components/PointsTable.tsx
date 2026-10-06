@@ -1721,10 +1721,10 @@ export const PointsTable: React.FC<PointsTableProps> = ({
 
         {/* View Content: TABLE MODE */}
         {viewMode === 'table' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-600">
-              <thead className="bg-slate-100 text-slate-800 font-bold border-b border-slate-200 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none">
-                <tr>
+          <div className="overflow-x-auto overflow-y-auto max-h-[68vh] min-h-[420px] border-t border-slate-200 relative shadow-inner">
+            <table className="w-full text-left text-xs text-slate-600 border-collapse">
+              <thead className="sticky top-0 z-20 bg-slate-100 text-slate-800 font-bold border-b border-slate-300 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none shadow-xs">
+                <tr className="bg-slate-100">
                   <th className="p-2 w-9 text-center">
                     <input
                       type="checkbox"
@@ -1831,10 +1831,10 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600">
-                    <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none">
-                      <tr>
+                <div className="overflow-x-auto overflow-y-auto max-h-[60vh] relative shadow-2xs">
+                  <table className="w-full text-left text-xs text-slate-600 border-collapse">
+                    <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none shadow-xs">
+                      <tr className="bg-slate-50">
                         <th className="p-2 w-9 text-center">Sel</th>
                         <th 
                           className="px-2 py-2 text-center whitespace-nowrap min-w-[85px] cursor-pointer hover:bg-slate-200/90 transition-colors select-none group"
@@ -1936,10 +1936,10 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-600">
-                    <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none">
-                      <tr>
+                <div className="overflow-x-auto overflow-y-auto max-h-[60vh] relative shadow-2xs">
+                  <table className="w-full text-left text-xs text-slate-600 border-collapse">
+                    <thead className="sticky top-0 z-10 bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase text-[10px] sm:text-[10.5px] leading-tight select-none shadow-xs">
+                      <tr className="bg-slate-50">
                         <th className="p-2 w-9 text-center">Sel</th>
                         <th 
                           className="px-2 py-2 text-center whitespace-nowrap min-w-[85px] cursor-pointer hover:bg-slate-200/90 transition-colors select-none group"
