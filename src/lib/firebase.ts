@@ -155,7 +155,7 @@ export function cleanForFirestore<T extends Record<string, any>>(obj: T): T {
 // -------------------------------------------------------------
 export const saveAllPointsToFirebase = async (
   points: MeasurementPoint[], 
-  timeoutMs = 8000,
+  timeoutMs = 12000,
   forceAttempt = false
 ): Promise<boolean> => {
   if (isQuotaExhausted() && !forceAttempt) {
@@ -194,7 +194,7 @@ export const saveAllPointsToFirebase = async (
     })();
 
     const timeoutPromise = new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error('Sincronización excedió el tiempo límite (8s)')), timeoutMs)
+      setTimeout(() => reject(new Error('Sincronización excedió el tiempo límite (12s)')), timeoutMs)
     );
 
     await Promise.race([savePromise, timeoutPromise]);
@@ -210,9 +210,6 @@ export const saveAllPointsToFirebase = async (
 };
 
 export const saveSinglePointToFirebase = async (point: MeasurementPoint): Promise<boolean> => {
-  if (isQuotaExhausted()) {
-    return false;
-  }
   const docRef = doc(db, 'points', point.id);
   try {
     await setDoc(docRef, cleanForFirestore(point), { merge: true });

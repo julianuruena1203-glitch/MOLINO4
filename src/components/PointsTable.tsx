@@ -1372,7 +1372,7 @@ export const PointsTable: React.FC<PointsTableProps> = ({
           </div>
         </button>
 
-        {/* Recuadro 6: PENDIENTES */}
+        {/* Recuadro 7: PENDIENTES */}
         <button
           type="button"
           onClick={() => setSelectedCoverage(selectedCoverage === 'pending' || selectedCoverage === '0' ? 'all' : 'pending')}

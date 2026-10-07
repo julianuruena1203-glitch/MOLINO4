@@ -141,13 +141,13 @@ export const INITIAL_MATERIALS: MaterialItem[] = [
     "id": "mat-003",
     "code": "CBL-STP-2COND",
     "name": "Cable Blindado Par Trenzado 2x20 AWG",
-    "description": "Cable apantallado con cubierta exterior de Teflón resistente a hidrocarburos",
+    "description": "Cable apantallado con cubierta exterior de Teflón resistente a hidrocarburos (consumo por cable und)",
     "category": "cables",
-    "requiredQty": 3200,
-    "installedQty": 2150,
+    "requiredQty": 161,
+    "installedQty": 0,
     "unitCost": 5800,
-    "unit": "m",
-    "stockQty": 1050,
+    "unit": "und",
+    "stockQty": 161,
     "supplier": "Belden Cable"
   },
   {

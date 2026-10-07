@@ -305,9 +305,13 @@ export default function App() {
         let parsed: MaterialItem[] = JSON.parse(saved);
         let has4251480 = false;
         parsed = parsed.map(m => {
-          if (m.code === '4251480' || m.name.toUpperCase().includes('CB206')) {
-            has4251480 = true;
-            return { ...m, unit: 'und' };
+          if (m.category === 'cables' || m.code === '4251480' || m.code === 'CBL-STP-2COND' || m.name.toUpperCase().includes('CB206') || m.name.toUpperCase().includes('CABLE')) {
+            if (m.code === '4251480') has4251480 = true;
+            return { 
+              ...m, 
+              unit: 'und', 
+              requiredQty: m.requiredQty > 500 ? 161 : m.requiredQty 
+            };
           }
           return m;
         });
@@ -508,10 +512,11 @@ export default function App() {
   // Force sync trigger - Guarantees data persistence immediately
   const handleForceSync = async () => {
     setSyncStatus('syncing');
-    showToast('Sincronizando cambios...');
+    showToast('Sincronizando cambios con la base de datos...');
 
     // Guarantee local storage is 100% saved right now
     try {
+      localStorage.removeItem('vib_monitor_firestore_quota_exhausted_v1');
       localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(points));
       localStorage.setItem(STORAGE_KEY_MATERIALS, JSON.stringify(materials));
       localStorage.setItem(STORAGE_KEY_BOXES, JSON.stringify(junctionBoxes));
@@ -521,21 +526,21 @@ export default function App() {
     const safetyTimer = setTimeout(() => {
       setSyncStatus('synced');
       showToast('Cambios guardados con éxito');
-    }, 3500);
+    }, 12000);
 
     try {
       const [pointsSaved] = await Promise.all([
-        saveAllPointsToFirebase(points, 3500),
-        saveAllMaterialsToFirebase(materials, 3500),
-        saveAllCostsToFirebase(categories, 3500),
-        saveAllBoxesToFirebase(junctionBoxes, 3500)
+        saveAllPointsToFirebase(points, 12000, true),
+        saveAllMaterialsToFirebase(materials, 12000),
+        saveAllCostsToFirebase(categories, 12000),
+        saveAllBoxesToFirebase(junctionBoxes, 12000)
       ]);
       clearTimeout(safetyTimer);
       if (pointsSaved === true) {
         clearCommittedUpdates();
       }
       setSyncStatus('synced');
-      showToast('Cambios guardados con éxito');
+      showToast('Sincronización completada con éxito');
     } catch (err) {
       clearTimeout(safetyTimer);
       console.warn('Force sync fallback to local mode:', err);
@@ -586,28 +591,65 @@ export default function App() {
 
   const handleUpdatePoints = (updatedPoints: MeasurementPoint[]) => {
     const now = new Date().toISOString();
-    const withTimestamps = updatedPoints.map(p => ({
-      ...p,
-      updatedAt: p.updatedAt || now
-    }));
+    const currentMap = new Map(points.map(p => [p.id, p]));
+    const changedPointIds = new Set<string>();
+
+    const withTimestamps = updatedPoints.map(p => {
+      const prev = currentMap.get(p.id);
+      const isChanged = !prev ||
+        prev.name !== p.name ||
+        prev.tag !== p.tag ||
+        prev.type !== p.type ||
+        prev.condition !== p.condition ||
+        prev.mountingType !== p.mountingType ||
+        prev.cableMeters !== p.cableMeters ||
+        prev.boxId !== p.boxId ||
+        prev.boxChannel !== p.boxChannel ||
+        prev.notes !== p.notes ||
+        prev.biasVoltage !== p.biasVoltage ||
+        JSON.stringify(prev.stages) !== JSON.stringify(p.stages);
+
+      if (isChanged) {
+        changedPointIds.add(p.id);
+        return { ...p, updatedAt: now };
+      }
+      return p;
+    });
+
     const normalized = deduplicatePoints(withTimestamps.map(normalizePoint));
-    recordLocalUpdatesBulk(normalized);
+    const changedPoints = normalized.filter(p => changedPointIds.has(p.id));
+
+    if (changedPoints.length > 0) {
+      recordLocalUpdatesBulk(changedPoints);
+    }
+
     setPoints(normalized);
     try {
       localStorage.setItem(STORAGE_KEY_POINTS, JSON.stringify(normalized));
     } catch {}
-    showToast(`${normalized.length} puntos guardados`);
+
+    showToast(changedPoints.length === 1 ? `Punto ${changedPoints[0].tag || ''} guardado` : `${normalized.length} puntos guardados`);
     syncMaterialsWithPoints(normalized);
 
-    saveAllPointsToFirebase(normalized, 6000)
-      .then((success) => {
-        if (success) {
-          clearCommittedUpdates();
-        }
-      })
-      .catch((err) => {
-        console.warn('Background points update note:', err);
-      });
+    // Save changed points immediately to Firestore
+    if (changedPoints.length > 0 && changedPoints.length <= 15) {
+      Promise.all(changedPoints.map(p => saveSinglePointToFirebase(p)))
+        .then(results => {
+          const savedIds = changedPoints.filter((_, idx) => results[idx]).map(p => p.id);
+          if (savedIds.length > 0) {
+            clearCommittedUpdates(savedIds);
+          }
+        })
+        .catch(err => console.warn('Background changed points sync note:', err));
+    } else {
+      saveAllPointsToFirebase(normalized, 12000, true)
+        .then(success => {
+          if (success) {
+            clearCommittedUpdates();
+          }
+        })
+        .catch(err => console.warn('Background points update note:', err));
+    }
   };
 
   const handleAddNewPoint = (newPoint: MeasurementPoint) => {
@@ -710,7 +752,8 @@ export default function App() {
       if (mat.category === 'cables') {
         return { 
           ...mat, 
-          installedQty: mat.unit === 'm' ? cableMetersCount : installedCablesCount 
+          unit: 'und',
+          installedQty: installedCablesCount 
         };
       }
       if (mat.category === 'conduit') {

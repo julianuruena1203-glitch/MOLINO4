@@ -34,9 +34,9 @@ export const formatCOP = (val: number): string => {
   return `$ ${Math.round(val || 0).toLocaleString('es-CO')} COP`;
 };
 
-// Helper to determine the correct unit: cable 4251480 is always 'und'
+// Helper to determine the correct unit: cables are always 'und' (consumo por cable und, no por metros)
 export const getMaterialUnit = (item: MaterialItem): string => {
-  if (item.code === '4251480' || (item.name && item.name.toUpperCase().includes('CB206'))) {
+  if (item.category === 'cables' || item.code === '4251480' || (item.name && item.name.toUpperCase().includes('CB206')) || (item.name && item.name.toUpperCase().includes('CABLE'))) {
     return 'und';
   }
   return item.unit ? item.unit.toLowerCase() : 'und';
